@@ -6,9 +6,14 @@
   "description": "Laboratório Node.js para estudar OAuth 2.0 e a API V8 do Zoho CRM.",
   "scripts": {
     "start": "node --env-file=.env src/index.js",
+    "start:api": "node --env-file=.env src/server.js",
+    "dev:api": "node --watch --env-file=.env src/server.js",
     "test": "node --test"
   },
   "engines": {
     "node": ">=20.6"
+  },
+  "dependencies": {
+    "express": "^5.2.1"
   }
 }

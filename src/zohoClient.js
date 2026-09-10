@@ -121,25 +121,35 @@ export class ZohoCrmClient {
     return this.request(`/crm/v8/Leads?${params}`);
   }
 
-  async createStudyLead() {
-    const uniqueSuffix = Date.now();
+  async getLead(leadId) {
+    const normalizedLeadId = validateLeadId(leadId);
 
-    const leadData = validateLeadForCreate(
-      {
-        First_Name: "Cliente",
-        Last_Name: "Laboratório Node.js",
-        Company: "HDev Soluções - Estudo Zoho",
-        Email: `estudo.zoho+${uniqueSuffix}@example.com`,
-        [this.config.customSourceField]: "API",
-      },
-      {
-        customSourceField: this.config.customSourceField,
-        allowedSourceValues: ["API"],
-      },
-    );
+    const fields = [
+      "First_Name",
+      "Last_Name",
+      "Company",
+      "Email",
+      "Description",
+      this.config.customSourceField,
+      "Created_Time",
+      "Modified_Time",
+    ];
+
+    const params = new URLSearchParams({
+      fields: fields.join(","),
+    });
+
+    return this.request(`/crm/v8/Leads/${normalizedLeadId}?${params}`);
+  }
+
+  async createLead(data) {
+    const validatedData = validateLeadForCreate(data, {
+      customSourceField: this.config.customSourceField,
+      allowedSourceValues: ["API"],
+    });
 
     const body = {
-      data: [leadData],
+      data: [validatedData],
       trigger: [],
     };
 
@@ -148,6 +158,46 @@ export class ZohoCrmClient {
       body: JSON.stringify(body),
     });
   }
+
+  async createStudyLead() {
+    const uniqueSuffix = Date.now();
+
+    return this.createLead({
+      First_Name: "Cliente",
+      Last_Name: "Laboratório Node.js",
+      Company: "HDev Soluções - Estudo Zoho",
+      Email: `estudo.zoho+${uniqueSuffix}@example.com`,
+      [this.config.customSourceField]: "API",
+    });
+  }
+
+  // async createStudyLead() {
+  //   const uniqueSuffix = Date.now();
+
+  //   const leadData = validateLeadForCreate(
+  //     {
+  //       First_Name: "Cliente",
+  //       Last_Name: "Laboratório Node.js",
+  //       Company: "HDev Soluções - Estudo Zoho",
+  //       Email: `estudo.zoho+${uniqueSuffix}@example.com`,
+  //       [this.config.customSourceField]: "API",
+  //     },
+  //     {
+  //       customSourceField: this.config.customSourceField,
+  //       allowedSourceValues: ["API"],
+  //     },
+  //   );
+
+  //   const body = {
+  //     data: [leadData],
+  //     trigger: [],
+  //   };
+
+  //   return this.request("/crm/v8/Leads", {
+  //     method: "POST",
+  //     body: JSON.stringify(body),
+  //   });
+  // }
 
   async updateLead(leadId, data, { confirm = false } = {}) {
     const normalizedLeadId = validateLeadId(leadId);
@@ -158,7 +208,7 @@ export class ZohoCrmClient {
     });
 
     if (!confirm) {
-      throw new Error(
+      throw new TypeError(
         "Atualização bloqueada. Informe a confirmação explícita.",
       );
     }
