@@ -186,3 +186,57 @@ test("rejeita atualização sem campos", async () => {
     /Informe pelo menos um campo para atualizar/,
   );
 });
+
+test("cliente bloqueia atualização com e-mail inválido", async () => {
+  let fetchCalled = false;
+
+  const fetchMock = async () => {
+    fetchCalled = true;
+    throw new Error("O fetch não deveria ser executado.");
+  };
+
+  const client = new ZohoCrmClient({ ...config }, fetchMock);
+
+  await assert.rejects(
+    () =>
+      client.updateLead(
+        "7603449000000701003",
+        {
+          Email: "email-invalido",
+        },
+        {
+          confirm: true,
+        },
+      ),
+    /Email possui formato inválido/,
+  );
+
+  assert.equal(fetchCalled, false);
+});
+
+test("cliente bloqueia campo desconhecido na atualização", async () => {
+  let fetchCalled = false;
+
+  const fetchMock = async () => {
+    fetchCalled = true;
+    throw new Error("O fetch não deveria ser executado.");
+  };
+
+  const client = new ZohoCrmClient({ ...config }, fetchMock);
+
+  await assert.rejects(
+    () =>
+      client.updateLead(
+        "7603449000000701003",
+        {
+          Campo_Inexistente: "Teste",
+        },
+        {
+          confirm: true,
+        },
+      ),
+    /Campo não permitido: Campo_Inexistente/,
+  );
+
+  assert.equal(fetchCalled, false);
+});
