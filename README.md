@@ -48,11 +48,25 @@ O comando padrão apenas renova o token e lista até cinco Leads:
 npm start
 ```
 
+### Consulta de Leads
+
+A execução renova o Access Token em memória e consulta os Leads sem exibir
+credenciais ou informações sensíveis no terminal.
+
+![Consulta de Leads pela API do Zoho CRM](docs/images/img3.jpg)
+
 Para criar um Lead fictício, é necessário declarar a intenção:
 
 ```bash
 npm start -- --create
 ```
+
+### Resultado no Zoho CRM
+
+O Lead fictício criado pela aplicação pode ser consultado diretamente no CRM.
+O campo personalizado **Sistema origem** foi preenchido com o valor **API**.
+
+![Lead criado pela aplicação no Zoho CRM](docs/images/img4.jpg)
 
 O projeto nunca imprime tokens ou segredos. Ele exibe somente a validade do
 token, a quantidade consultada e, em caso de criação, o ID do registro.
@@ -64,6 +78,14 @@ Os testes usam respostas simuladas e não acessam sua conta Zoho:
 ```bash
 npm test
 ```
+
+Resultado esperado:
+
+![Testes automatizados executados com sucesso](docs/images/img2.jpg)
+
+Os quatro testes validam o carregamento da configuração, a proteção dos
+segredos, a renovação do token, a consulta de Leads e a criação utilizando
+o API name configurado.
 
 ## Fluxo implementado
 
