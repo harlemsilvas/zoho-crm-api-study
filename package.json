@@ -1,0 +1,14 @@
+{
+  "name": "zoho-crm-api-study",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Laboratório Node.js para estudar OAuth 2.0 e a API V8 do Zoho CRM.",
+  "scripts": {
+    "start": "node --env-file=.env src/index.js",
+    "test": "node --test"
+  },
+  "engines": {
+    "node": ">=20.6"
+  }
+}
