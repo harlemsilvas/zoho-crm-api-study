@@ -1,3 +1,8 @@
+import {
+  validateLeadForCreate,
+  validateLeadForUpdate,
+} from "./leadValidation.js";
+
 export class ZohoApiError extends Error {
   constructor(message, { status, code, details } = {}) {
     super(message);
@@ -118,16 +123,23 @@ export class ZohoCrmClient {
 
   async createStudyLead() {
     const uniqueSuffix = Date.now();
+
+    const leadData = validateLeadForCreate(
+      {
+        First_Name: "Cliente",
+        Last_Name: "Laboratório Node.js",
+        Company: "HDev Soluções - Estudo Zoho",
+        Email: `estudo.zoho+${uniqueSuffix}@example.com`,
+        [this.config.customSourceField]: "API",
+      },
+      {
+        customSourceField: this.config.customSourceField,
+        allowedSourceValues: ["API"],
+      },
+    );
+
     const body = {
-      data: [
-        {
-          First_Name: "Cliente",
-          Last_Name: "Laboratório Node.js",
-          Company: "HDev Soluções - Estudo Zoho",
-          Email: `estudo.zoho+${uniqueSuffix}@example.com`,
-          [this.config.customSourceField]: "API",
-        },
-      ],
+      data: [leadData],
       trigger: [],
     };
 
@@ -139,7 +151,11 @@ export class ZohoCrmClient {
 
   async updateLead(leadId, data, { confirm = false } = {}) {
     const normalizedLeadId = validateLeadId(leadId);
-    const validatedData = validateUpdateData(data);
+
+    const validatedData = validateLeadForUpdate(data, {
+      customSourceField: this.config.customSourceField,
+      allowedSourceValues: ["API"],
+    });
 
     if (!confirm) {
       throw new Error(
@@ -171,30 +187,6 @@ function validateLeadId(leadId) {
   }
 
   return normalizedLeadId;
-}
-
-function validateUpdateData(data) {
-  if (!data || typeof data !== "object" || Array.isArray(data)) {
-    throw new TypeError(
-      "Os dados da atualização devem ser informados como objeto.",
-    );
-  }
-
-  if (Object.hasOwn(data, "id")) {
-    throw new TypeError(
-      "O ID não deve ser informado dentro dos dados da atualização.",
-    );
-  }
-
-  const entries = Object.entries(data).filter(
-    ([, value]) => value !== undefined,
-  );
-
-  if (entries.length === 0) {
-    throw new TypeError("Informe pelo menos um campo para atualizar.");
-  }
-
-  return Object.fromEntries(entries);
 }
 
 async function readJson(response) {
