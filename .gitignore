@@ -3,5 +3,5 @@ node_modules/
 coverage/
 *.log
 .venv/
-*copy.js
+index copy.js
 
