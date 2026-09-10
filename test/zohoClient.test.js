@@ -240,3 +240,77 @@ test("cliente bloqueia campo desconhecido na atualização", async () => {
 
   assert.equal(fetchCalled, false);
 });
+
+test("consulta um Lead individual pelo ID", async () => {
+  const calls = [];
+
+  const fetchMock = async (url, options) => {
+    calls.push({
+      url: String(url),
+      options,
+    });
+
+    return new Response(
+      JSON.stringify({
+        data: [
+          {
+            id: "7603449000000701003",
+            First_Name: "Cliente",
+            Last_Name: "Laboratório",
+            Company: "HDev Soluções",
+            Description: "Lead de estudo",
+            Lista_de_op_es: "API",
+          },
+        ],
+      }),
+      {
+        status: 200,
+      },
+    );
+  };
+
+  const client = new ZohoCrmClient(
+    {
+      ...config,
+    },
+    fetchMock,
+  );
+
+  client.accessToken = "cached-token";
+  client.accessTokenExpiresAt = Date.now() + 3_600_000;
+
+  const result = await client.getLead("7603449000000701003");
+
+  assert.equal(calls.length, 1);
+  assert.match(calls[0].url, /\/crm\/v8\/Leads\/7603449000000701003\?/);
+  assert.match(calls[0].url, /fields=/);
+  assert.equal(calls[0].options.method, undefined);
+  assert.equal(
+    calls[0].options.headers.get("Authorization"),
+    "Zoho-oauthtoken cached-token",
+  );
+  assert.equal(result.data[0].id, "7603449000000701003");
+});
+
+test("bloqueia consulta de Lead com ID inválido", async () => {
+  let fetchCalled = false;
+
+  const fetchMock = async () => {
+    fetchCalled = true;
+    throw new Error("O fetch não deveria ser executado.");
+  };
+
+  const client = new ZohoCrmClient(
+    {
+      ...config,
+    },
+    fetchMock,
+  );
+
+  await assert.rejects(
+    () => client.getLead("id-invalido"),
+    /ID do Lead deve conter somente números/,
+  );
+
+  assert.equal(fetchCalled, false);
+});
