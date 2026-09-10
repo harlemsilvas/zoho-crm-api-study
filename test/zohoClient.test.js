@@ -64,3 +64,125 @@ test("cria Lead usando o API name configurado", async () => {
   assert.equal(body.data[0].Lista_de_op_es, "API");
   assert.equal(body.trigger.length, 0);
 });
+
+test("atualiza Lead com confirmação explícita", async () => {
+  const calls = [];
+
+  const fetchMock = async (url, options) => {
+    calls.push({
+      url: String(url),
+      options,
+    });
+
+    return new Response(
+      JSON.stringify({
+        data: [
+          {
+            status: "success",
+            code: "SUCCESS",
+            message: "record updated",
+            details: {
+              id: "7603449000000701003",
+            },
+          },
+        ],
+      }),
+      { status: 200 },
+    );
+  };
+
+  const client = new ZohoCrmClient({ ...config }, fetchMock);
+  client.accessToken = "cached-token";
+  client.accessTokenExpiresAt = Date.now() + 3_600_000;
+
+  const result = await client.updateLead(
+    "7603449000000701003",
+    {
+      Description: "Lead atualizado pelo teste automatizado",
+      [config.customSourceField]: "API",
+    },
+    {
+      confirm: true,
+    },
+  );
+
+  assert.equal(calls.length, 1);
+  assert.equal(
+    calls[0].url,
+    "https://www.zohoapis.com/crm/v8/Leads/7603449000000701003",
+  );
+  assert.equal(calls[0].options.method, "PUT");
+  assert.equal(
+    calls[0].options.headers.get("Authorization"),
+    "Zoho-oauthtoken cached-token",
+  );
+
+  const body = JSON.parse(calls[0].options.body);
+
+  assert.equal(
+    body.data[0].Description,
+    "Lead atualizado pelo teste automatizado",
+  );
+  assert.equal(body.data[0].Lista_de_op_es, "API");
+  assert.deepEqual(body.trigger, []);
+  assert.equal(result.data[0].status, "success");
+});
+
+test("bloqueia atualização sem confirmação explícita", async () => {
+  let fetchCalled = false;
+
+  const fetchMock = async () => {
+    fetchCalled = true;
+    throw new Error("O fetch não deveria ser executado.");
+  };
+
+  const client = new ZohoCrmClient({ ...config }, fetchMock);
+
+  await assert.rejects(
+    () =>
+      client.updateLead("7603449000000701003", {
+        Description: "Tentativa sem confirmação",
+      }),
+    /Atualização bloqueada/,
+  );
+
+  assert.equal(fetchCalled, false);
+});
+
+test("rejeita atualização com ID inválido", async () => {
+  const client = new ZohoCrmClient({ ...config }, async () => {
+    throw new Error("O fetch não deveria ser executado.");
+  });
+
+  await assert.rejects(
+    () =>
+      client.updateLead(
+        "id-invalido",
+        {
+          Description: "Teste",
+        },
+        {
+          confirm: true,
+        },
+      ),
+    /ID do Lead deve conter somente números/,
+  );
+});
+
+test("rejeita atualização sem campos", async () => {
+  const client = new ZohoCrmClient({ ...config }, async () => {
+    throw new Error("O fetch não deveria ser executado.");
+  });
+
+  await assert.rejects(
+    () =>
+      client.updateLead(
+        "7603449000000701003",
+        {},
+        {
+          confirm: true,
+        },
+      ),
+    /Informe pelo menos um campo para atualizar/,
+  );
+});

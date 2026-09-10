@@ -90,7 +90,11 @@ export class ZohoCrmClient {
     });
     const payload = await readJson(response);
 
-    assertSuccess(response, payload, `Falha na chamada ${options.method ?? "GET"} ${path}`);
+    assertSuccess(
+      response,
+      payload,
+      `Falha na chamada ${options.method ?? "GET"} ${path}`,
+    );
     return payload;
   }
 
@@ -132,6 +136,65 @@ export class ZohoCrmClient {
       body: JSON.stringify(body),
     });
   }
+
+  async updateLead(leadId, data, { confirm = false } = {}) {
+    const normalizedLeadId = validateLeadId(leadId);
+    const validatedData = validateUpdateData(data);
+
+    if (!confirm) {
+      throw new Error(
+        "Atualização bloqueada. Informe a confirmação explícita.",
+      );
+    }
+
+    const body = {
+      data: [validatedData],
+      trigger: [],
+    };
+
+    return this.request(`/crm/v8/Leads/${normalizedLeadId}`, {
+      method: "PUT",
+      body: JSON.stringify(body),
+    });
+  }
+}
+
+function validateLeadId(leadId) {
+  const normalizedLeadId = String(leadId ?? "").trim();
+
+  if (!normalizedLeadId) {
+    throw new TypeError("O ID do Lead é obrigatório.");
+  }
+
+  if (!/^\d{10,30}$/.test(normalizedLeadId)) {
+    throw new TypeError("O ID do Lead deve conter somente números.");
+  }
+
+  return normalizedLeadId;
+}
+
+function validateUpdateData(data) {
+  if (!data || typeof data !== "object" || Array.isArray(data)) {
+    throw new TypeError(
+      "Os dados da atualização devem ser informados como objeto.",
+    );
+  }
+
+  if (Object.hasOwn(data, "id")) {
+    throw new TypeError(
+      "O ID não deve ser informado dentro dos dados da atualização.",
+    );
+  }
+
+  const entries = Object.entries(data).filter(
+    ([, value]) => value !== undefined,
+  );
+
+  if (entries.length === 0) {
+    throw new TypeError("Informe pelo menos um campo para atualizar.");
+  }
+
+  return Object.fromEntries(entries);
 }
 
 async function readJson(response) {
@@ -155,9 +218,12 @@ function assertSuccess(response, payload, context) {
     return;
   }
 
-  throw new ZohoApiError(`${context}: ${payload.message ?? payload.error ?? response.statusText}`, {
-    status: response.status,
-    code: payload.code ?? payload.error,
-    details: payload.details,
-  });
+  throw new ZohoApiError(
+    `${context}: ${payload.message ?? payload.error ?? response.statusText}`,
+    {
+      status: response.status,
+      code: payload.code ?? payload.error,
+      details: payload.details,
+    },
+  );
 }
