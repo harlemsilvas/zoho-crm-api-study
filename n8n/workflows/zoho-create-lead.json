@@ -1,0 +1,281 @@
+{
+  "name": "Zoho CRM — Criar Lead via Webhook",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "zoho/leads",
+        "authentication": "headerAuth",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        240,
+        -144
+      ],
+      "id": "4bad123a-54ba-4162-b6c3-54345696ab91",
+      "name": "Webhook",
+      "webhookId": "ee584537-ca2e-4aa3-b3a8-66f6b2de9136",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "aQvHCQdVOtssMZW1",
+          "name": "Zoho Study — Webhook Auth"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const input = $json.body ?? {};\n\nconst normalizeText = (value) => {\n  if (typeof value !== \"string\") {\n    return value;\n  }\n\n  const normalized = value.trim();\n  return normalized || undefined;\n};\n\nconst payload = {\n  First_Name: normalizeText(input.First_Name),\n  Last_Name: normalizeText(input.Last_Name),\n  Company: normalizeText(input.Company),\n  Email: normalizeText(input.Email),\n  Description: normalizeText(input.Description),\n};\n\nconst errors = [];\n\nif (!payload.Last_Name) {\n  errors.push(\"Last_Name é obrigatório.\");\n}\n\nif (!payload.Company) {\n  errors.push(\"Company é obrigatório.\");\n}\n\nif (\n  payload.Email &&\n  !/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(payload.Email)\n) {\n  errors.push(\"Email possui formato inválido.\");\n}\n\nfor (const field of Object.keys(payload)) {\n  if (payload[field] === undefined) {\n    delete payload[field];\n  }\n}\n\nreturn {\n  valid: errors.length === 0,\n  errors,\n  payload,\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        464,
+        -128
+      ],
+      "id": "c97592d2-ca46-4403-85b3-b39af66f7b5c",
+      "name": "Validar e normalizar Lead"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "b65a4825-9586-4d4e-a9b4-564a79e6072d",
+              "leftValue": "={{ $json.valid }}",
+              "rightValue": "={{ $json.valid }}",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        640,
+        -128
+      ],
+      "id": "9ce3dcaf-23bb-4c1c-8b70-d0575cd1cee4",
+      "name": "Lead válido?"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { success: false, error: { code: \"VALIDATION_ERROR\", message: \"Os dados do Lead são inválidos.\", details: $json.errors } } }}",
+        "options": {
+          "responseCode": 400
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        784,
+        64
+      ],
+      "id": "08c26077-22ea-48da-a8bb-ab7ee87bcd27",
+      "name": "Responder validação inválida"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://zoho-api:3000/api/leads",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ $json.payload }}",
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true,
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        928,
+        -128
+      ],
+      "id": "0220a95a-cd44-44a4-a605-f62d5c115ae0",
+      "name": "Criar Lead na API"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "be872389-1e83-4cd3-8dd9-36fb025baf78",
+              "leftValue": "={{ $json.statusCode }}",
+              "rightValue": 200,
+              "operator": {
+                "type": "number",
+                "operation": "gte"
+              }
+            },
+            {
+              "id": "0e81f02c-8de2-4a15-be18-69b9a2dff62f",
+              "leftValue": "={{ $json.statusCode }}",
+              "rightValue": 300,
+              "operator": {
+                "type": "number",
+                "operation": "lt"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1104,
+        -112
+      ],
+      "id": "991c79e8-656b-4608-81b5-a9da793a3aae",
+      "name": "API respondeu com sucesso?"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json.body }}",
+        "options": {
+          "responseCode": "={{ $json.statusCode }}"
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        1328,
+        -144
+      ],
+      "id": "0e220a16-2b0f-4746-8dd1-58e9b4a6636c",
+      "name": "Responder sucesso"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json.body || { success: false, error: { code: \"ZOHO_API_ERROR\", message: \"Não foi possível criar o Lead.\" } } }}",
+        "options": {
+          "responseCode": "={{ $json.statusCode }}"
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        1312,
+        96
+      ],
+      "id": "a5f0d2a6-5503-4c8c-9fa6-3b2e01a23bab",
+      "name": "Responder erro da API"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Validar e normalizar Lead",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validar e normalizar Lead": {
+      "main": [
+        [
+          {
+            "node": "Lead válido?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Lead válido?": {
+      "main": [
+        [
+          {
+            "node": "Criar Lead na API",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Responder validação inválida",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Criar Lead na API": {
+      "main": [
+        [
+          {
+            "node": "API respondeu com sucesso?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "API respondeu com sucesso?": {
+      "main": [
+        [
+          {
+            "node": "Responder sucesso",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Responder erro da API",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "902451d5-735c-4db9-9315-97d8b655ecf5",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "27b0ab19ff2d6fb9790f04284a724a4205b6caa863bfff649190f5deb8165b39"
+  },
+  "nodeGroups": [],
+  "id": "Rs53aM4tmRcP7Yua",
+  "tags": []
+}
