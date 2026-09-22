@@ -1,0 +1,79 @@
+services:
+  zoho-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+
+    container_name: zoho-study-api
+    restart: unless-stopped
+
+    env_file:
+      - .env
+
+    environment:
+      API_HOST: 0.0.0.0
+      PORT: 3000
+
+    ports:
+      - "127.0.0.1:3000:3000"
+
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://127.0.0.1:3000/health').then(r => { if (!r.ok) process.exit(1) }).catch(() => process.exit(1))",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+    networks:
+      - zoho-study
+
+  n8n:
+    image: docker.n8n.io/n8nio/n8n:2.38.6
+    container_name: zoho-study-n8n
+    restart: unless-stopped
+
+    ports:
+      - "127.0.0.1:5678:5678"
+
+    environment:
+      N8N_HOST: localhost
+      N8N_PORT: 5678
+      N8N_PROTOCOL: http
+
+      TZ: America/Sao_Paulo
+      GENERIC_TIMEZONE: America/Sao_Paulo
+
+      N8N_ENCRYPTION_KEY: ${N8N_ENCRYPTION_KEY}
+      N8N_ENFORCE_SETTINGS_FILE_PERMISSIONS: "true"
+
+      N8N_COMMUNITY_PACKAGES_ENABLED: "false"
+      N8N_UNVERIFIED_PACKAGES_ENABLED: "false"
+
+      N8N_RUNNERS_TASK_TIMEOUT: "60"
+
+      N8N_COMPRESSION_NODE_MAX_DECOMPRESSED_SIZE_BYTES: "268435456"
+      N8N_COMPRESSION_NODE_MAX_ZIP_ENTRIES: "1000"
+
+    depends_on:
+      zoho-api:
+        condition: service_healthy
+
+    volumes:
+      - n8n_data:/home/node/.n8n
+
+    networks:
+      - zoho-study
+
+volumes:
+  n8n_data:
+    name: zoho-study-n8n-data
+
+networks:
+  zoho-study:
+    name: zoho-study-network
