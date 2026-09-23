@@ -72,6 +72,34 @@ curl -fsSI https://zoho.hdevsolucoes.tech/healthz >/dev/null
 echo "health checks: ok"
 ```
 
+## Health check periódico
+
+O script `ops/zoho-healthcheck.sh` verifica a API em `3030`, o n8n em `5679` e
+o HTTPS público. Para instalar o timer na VPS:
+
+```bash
+sudo install -m 755 ops/zoho-healthcheck.sh \
+  /home/zoho-deploy/zoho-crm-api-study/ops/zoho-healthcheck.sh
+sudo install -m 644 ops/systemd/zoho-healthcheck.service \
+  /etc/systemd/system/zoho-healthcheck.service
+sudo install -m 644 ops/systemd/zoho-healthcheck.timer \
+  /etc/systemd/system/zoho-healthcheck.timer
+sudo systemctl daemon-reload
+sudo systemctl enable --now zoho-healthcheck.timer
+```
+
+Validar imediatamente e conferir o agendamento:
+
+```bash
+systemctl start zoho-healthcheck.service
+systemctl status zoho-healthcheck.service --no-pager
+systemctl list-timers zoho-healthcheck.timer
+journalctl -u zoho-healthcheck.service -n 20 --no-pager
+```
+
+O serviço falha se qualquer endpoint não responder com sucesso. O timer executa
+dois minutos após o boot e depois a cada cinco minutos.
+
 Não execute `docker compose down -v`. O volume `zoho-study-n8n-data` contém o
 estado do n8n e precisa de backup antes de mudanças relevantes.
 

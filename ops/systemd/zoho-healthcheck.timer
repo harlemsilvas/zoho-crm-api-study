@@ -1,0 +1,11 @@
+[Unit]
+Description=Run Zoho Study health check periodically
+
+[Timer]
+OnBootSec=2min
+OnUnitActiveSec=5min
+Unit=zoho-healthcheck.service
+Persistent=true
+
+[Install]
+WantedBy=timers.target

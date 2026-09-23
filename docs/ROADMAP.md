@@ -16,8 +16,8 @@ manual prolongada.
 - Criar health check periódico para `3030/health`, `5679/healthz` e HTTPS público.
 - Definir retenção de backups e logs, além do procedimento de rollback.
 
-Aceite: um backup novo, uma restauração verificada e um alerta reproduzível de
-serviço indisponível.
+Aceite: um backup novo, uma restauração verificada e um health check periódico
+que falha de forma observável quando um serviço fica indisponível.
 
 ## Prioridade 1 — segurança de borda
 

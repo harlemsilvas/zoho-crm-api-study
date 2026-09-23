@@ -1,0 +1,8 @@
+[Unit]
+Description=Zoho Study service health check
+
+[Service]
+Type=oneshot
+User=zoho-deploy
+WorkingDirectory=/home/zoho-deploy/zoho-crm-api-study
+ExecStart=/home/zoho-deploy/zoho-crm-api-study/ops/zoho-healthcheck.sh
