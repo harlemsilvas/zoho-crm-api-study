@@ -17,7 +17,8 @@ manual prolongada.
 - Definir retenção de backups e logs, além do procedimento de rollback.
 
 Aceite: um backup novo, uma restauração verificada e um health check periódico
-que falha de forma observável quando um serviço fica indisponível.
+que falha de forma observável quando um serviço fica indisponível. A política de
+retenção e rollback está em [Operations Policy](OPERATIONS_POLICY.md).
 
 ## Prioridade 1 — segurança de borda
 

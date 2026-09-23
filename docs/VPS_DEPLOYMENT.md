@@ -103,6 +103,9 @@ dois minutos após o boot e depois a cada cinco minutos.
 Não execute `docker compose down -v`. O volume `zoho-study-n8n-data` contém o
 estado do n8n e precisa de backup antes de mudanças relevantes.
 
+Consulte [Operations Policy](OPERATIONS_POLICY.md) para retenção de backups,
+limites de logs e rollback de código ou workflow.
+
 ## Segurança operacional
 
 - Não abrir `3030`, `5678` ou `5679` no firewall.
