@@ -110,9 +110,10 @@ for i in $(seq 1 45); do
 done | sort | uniq -c
 ```
 
-O resultado deve mostrar respostas `429` depois do burst. Interrompa o teste se
-houver impacto nos recursos do n8n e remova a configuração caso o limite precise
-ser ajustado. O teste não envia `X-Webhook-Key`, portanto não deve criar Lead.
+Na validação executada, o teste retornou `12` respostas `403` do n8n e `33`
+respostas `429` do Nginx, confirmando o bloqueio após o burst. O teste não
+enviou `X-Webhook-Key` e não criou Lead. Revise os valores se o volume real
+de retries ou lotes do n8n mudar.
 
 ## Instalação registrada
 
