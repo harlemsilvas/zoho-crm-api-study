@@ -185,8 +185,9 @@ arquivos não contêm `.env`, credenciais ou payloads.
 
 ## Último deploy validado
 
-A rotina de publicação implantou o SHA `0a18de5` na branch
-`feat/structured-logs`. A validação remota confirmou:
+A rotina de publicação implantou o SHA `03e78b2` na branch
+`feat/structured-logs` em `2026-09-23T20:52:45Z`. O registro remoto contém os
+IDs das imagens usadas. A validação remota confirmou:
 
 - API saudável em `127.0.0.1:3030`;
 - `/readiness` retornando `200` com `zoho_configuration: ok`;

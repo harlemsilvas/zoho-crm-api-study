@@ -83,11 +83,11 @@ requisição pelo mesmo ID sem expor segredo ou dado pessoal.
 Objetivo: tornar atualizações previsíveis e reversíveis.
 
 - [x] Criar `compose.vps.yaml`, um override versionado para a VPS com `3030` e
-  `5679`, sem incluir valores secretos. A validação no host fica pendente do
-  próximo deploy.
+  `5679`, sem incluir valores secretos. O override foi validado no host durante
+  o deploy `03e78b2`.
 - [x] Automatizar `npm test`, `git diff --check` e validação do workflow no CI.
 - [x] Registrar versão da imagem, commit implantado e data do deploy na rotina;
-  o registro será criado no próximo deploy com o override da VPS.
+  o registro foi criado no deploy `03e78b2` com o override da VPS.
 - [x] Definir procedimento de rollback para a imagem e para o workflow n8n,
   usando os registros `latest-deploy` e `previous-deploy`.
 
