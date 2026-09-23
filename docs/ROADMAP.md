@@ -55,10 +55,13 @@ Objetivo: reduzir exposição e facilitar rotação de acesso.
   `POST /webhook/zoho/leads`. O teste controlado retornou `12` respostas `403`
   e `33` respostas `429`, sem credencial e sem criar Lead.
 
-- [ ] Revisar permissões do usuário `zoho-deploy`, SSH e atualizações do sistema.
-  A auditoria sem root confirmou SSH `700/600`, acesso ao Docker e `.env*`
-  `600`; ainda faltam aplicar/registrar a política final de autenticação e
-  tratar as atualizações Ubuntu pendentes.
+- [x] Revisar permissões do usuário `zoho-deploy`, SSH e atualizações do sistema.
+  A política SSH foi confirmada em `2026-09-23`: porta `22`,
+  `PermitRootLogin no`, autenticação por chave e senha ativas, e autenticação
+  interativa desativada. O usuário mantém SSH `700/600`, grupo `docker`, grupo
+  `sudo`, `umask 0002` e `unattended-upgrades` ativo. As atualizações Ubuntu
+  foram concluídas; a lista de pacotes pendentes ficou vazia. Após a manutenção,
+  API, readiness, n8n e HTTPS público retornaram sucesso.
 
 Aceite: chave rotacionada sem editar o código, tentativa sem autenticação
 rejeitada e portas internas inacessíveis externamente.
@@ -123,13 +126,16 @@ Objetivo: melhorar o fluxo de Leads sem ampliar risco de criação duplicada.
 Aceite: reenvio da mesma execução não cria duplicidade e os contratos existentes
 continuam aprovados.
 
-## Ordem para a próxima sessão
+## Próxima sessão
 
-1. Fazer backup e testar restauração em volume temporário.
-2. Confirmar rotação de logs e saúde dos serviços.
-3. Criar monitoramento simples com retenção definida.
-4. Versionar o override Compose da VPS.
-5. Só então iniciar idempotência e novas operações de Leads.
+As Prioridades 0 a 4 foram concluídas e validadas. Próximas evoluções devem
+ser escolhidas conforme o risco e começar por uma mudança pequena:
+
+1. Avaliar armazenamento compartilhado para idempotência antes de usar múltiplas
+   réplicas da API.
+2. Avaliar um workflow n8n separado para atualização de Lead, mantendo a dupla
+   confirmação da API.
+3. Manter o ciclo de backup, health check, testes e deploy reproduzível.
 
 Cada etapa deve ser pequena, testada e commitada separadamente. Não executar
 alterações destrutivas na VPS sem backup e sem um rollback definido.
