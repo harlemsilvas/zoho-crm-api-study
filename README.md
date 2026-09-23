@@ -108,6 +108,9 @@ camada HTTPS, n8n atrás de proxy reverso e API restrita a loopback. Consulte
 [VPS Deployment](docs/VPS_DEPLOYMENT.md) para a operação e
 [Portfolio](docs/PORTFOLIO.md) para o relato da evolução técnica.
 
+O plano de evolução está em [Roadmap](docs/ROADMAP.md), começando por backup,
+restauração, rotação de logs e monitoramento da VPS.
+
 ## Fluxo implementado
 
 1. Lê as credenciais de `.env`.

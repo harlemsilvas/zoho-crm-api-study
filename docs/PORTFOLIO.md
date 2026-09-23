@@ -46,8 +46,6 @@ acompanhando n8n, API e Zoho.
 
 ## Próximas melhorias
 
-- backup automatizado e restauração testada do volume do n8n;
-- rotação e retenção centralizada dos logs;
-- monitoramento e alertas;
-- pipeline de deploy com revisão e rollback;
-- documentação pública com diagramas sem dados sensíveis.
+O roadmap prioriza resiliência da VPS, segurança de borda, operação reproduzível
+e idempotência do fluxo de Leads. Consulte [Roadmap](ROADMAP.md) para a ordem,
+critérios de aceite e limites de cada etapa.
