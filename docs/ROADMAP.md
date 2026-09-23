@@ -67,9 +67,9 @@ rejeitada e portas internas inacessíveis externamente.
 
 Objetivo: responder rapidamente a falhas sem registrar dados sensíveis.
 
-- [x] Adicionar endpoint `/readiness` separado do `/health`, verificando a
-  configuração necessária sem renovar OAuth nem chamar operações de Lead.
-  Publicação e validação na VPS ficam pendentes do próximo deploy.
+- [x] Adicionar e validar na VPS o endpoint `/readiness` separado do `/health`,
+  verificando a configuração necessária sem renovar OAuth nem chamar operações
+  de Lead. O deploy no SHA `0a18de5` retornou `200` e `zoho_configuration: ok`.
 - Definir formato de consulta dos logs por `request_id`, status e evento.
 - Monitorar latência e taxa de erro HTTP/Zoho.
 - Documentar alertas para falhas de token, 5xx e ausência de eventos.

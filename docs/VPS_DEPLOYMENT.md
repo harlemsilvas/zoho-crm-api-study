@@ -153,9 +153,20 @@ Uso:
 VPS_HOST=187.77.61.83 ./ops/publish-vps.sh --push --deploy
 ```
 
-A VPS atualmente possui uma alteração local em `compose.n8n.yaml`; a rotina irá
-parar antes do pull até essa alteração ser preservada ou incorporada a uma
+Se a VPS possuir uma alteração local em `compose.n8n.yaml`, a rotina irá parar
+antes do push ou pull até essa alteração ser preservada ou incorporada a uma
 configuração versionada. Isso evita sobrescrever o mapeamento local de portas.
+
+## Último deploy validado
+
+A rotina de publicação implantou o SHA `0a18de5` na branch
+`feat/structured-logs`. A validação remota confirmou:
+
+- API saudável em `127.0.0.1:3030`;
+- `/readiness` retornando `200` com `zoho_configuration: ok`;
+- n8n saudável em `127.0.0.1:5679`;
+- HTTPS público retornando `200` em `/healthz`;
+- working tree remoto limpo.
 
 ## Instalação registrada
 
