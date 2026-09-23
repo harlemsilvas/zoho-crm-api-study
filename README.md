@@ -101,6 +101,13 @@ curl -i -H 'X-Request-ID: estudo-n8n-001' http://127.0.0.1:3000/health
 Consulte [Observabilidade](docs/OBSERVABILITY.md) para eventos, captura nos testes,
 limites da redação e acompanhamento pelo n8n.
 
+## Implantação
+
+A aplicação foi publicada em `https://zoho.hdevsolucoes.tech`, com Nginx na
+camada HTTPS, n8n atrás de proxy reverso e API restrita a loopback. Consulte
+[VPS Deployment](docs/VPS_DEPLOYMENT.md) para a operação e
+[Portfolio](docs/PORTFOLIO.md) para o relato da evolução técnica.
+
 ## Fluxo implementado
 
 1. Lê as credenciais de `.env`.

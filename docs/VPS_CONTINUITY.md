@@ -3,6 +3,21 @@
 A integração local foi validada com 53 testes e uma criação controlada via
 `n8n → API Express → Zoho CRM`. Este documento orienta a sessão de implantação.
 
+## Estado confirmado da VPS
+
+- Usuário operacional: `zoho-deploy`, com SSH por chave e grupo `docker`.
+- Node.js `20.20.2`, npm `11.18.0` e 53 testes aprovados na VPS.
+- Domínio público: `https://zoho.hdevsolucoes.tech`.
+- Nginx termina HTTPS e encaminha para o n8n.
+- API: `127.0.0.1:3030` no host e `3000` no container.
+- n8n: `127.0.0.1:5679` no host e `5678` no container.
+- Health público do n8n retornou `200 OK`.
+- Webhook autenticado criou um Lead fictício com resposta `201`.
+- O mesmo `X-Request-ID` apareceu nos eventos HTTP e Zoho.
+
+Não registrar neste documento IPs privados, credenciais, tokens, senhas ou
+conteúdo de `.env` e `.env.n8n`.
+
 ## Decisões
 
 - Domínio: `zoho.hdevsolucoes.tech`.
@@ -73,12 +88,14 @@ curl -fsS http://127.0.0.1:5679/healthz
 
 Nunca usar `docker compose down -v`.
 
-6. Configurar o proxy, por exemplo no Caddy:
+6. Configurar o proxy Nginx em `/etc/nginx/sites-available/zoho`. O bloco
+   HTTPS deve encaminhar para `127.0.0.1:5679`; o bloco HTTP deve apenas
+   redirecionar para HTTPS. Validar com:
 
-```text
-zoho.hdevsolucoes.tech {
-    reverse_proxy 127.0.0.1:5679
-}
+```bash
+sudo nginx -t
+sudo systemctl reload nginx
+curl -I https://zoho.hdevsolucoes.tech/healthz
 ```
 
 Abrir no firewall somente `22`, `80` e `443`.
@@ -98,9 +115,31 @@ Depois fazer uma única criação com dados fictícios e confirmar `201`,
 
 8. Configurar rotação/retenção de logs e backup do volume n8n:
 
+Nos serviços `zoho-api` e `n8n`, usar `options` no plural:
+
+```yaml
+logging:
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "5"
+```
+
 ```bash
 docker logs --since 10m zoho-study-api
 docker logs --since 10m zoho-study-n8n
+```
+
+Backup do volume em janela de manutenção:
+
+```bash
+docker compose --env-file .env.n8n -f compose.n8n.yaml stop n8n
+mkdir -p ~/backups/zoho
+BACKUP_NAME="n8n-data-$(date +%Y%m%d-%H%M%S).tar.gz"
+docker run --rm -v zoho-study-n8n-data:/source:ro \
+  -v "$HOME/backups/zoho:/backup" alpine:3.20 \
+  tar czf "/backup/$BACKUP_NAME" -C /source .
+docker compose --env-file .env.n8n -f compose.n8n.yaml up -d n8n
 ```
 
 ## Critérios de aceite
@@ -110,6 +149,7 @@ docker logs --since 10m zoho-study-n8n
 - Volume persiste após reinício.
 - Workflow propaga `X-Request-ID`.
 - Uma execução controlada retorna `201` e correlaciona os logs.
+- Logs Docker têm limite de tamanho e o backup do volume foi executado.
 - Nenhum segredo aparece em Git, logs ou documentação.
 
 ## Encerramento
