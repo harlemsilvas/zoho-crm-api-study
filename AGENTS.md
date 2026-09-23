@@ -100,12 +100,12 @@ Laboratório Node.js para estudar OAuth 2.0 e a API V8 do Zoho CRM, com o fluxo
 Para conferir o header com a API já em execução, sem acessar o Zoho:
 
 ```bash
-curl -i -H 'X-Request-ID: estudo-n8n-001' http://127.0.0.1:3000/health
+curl -i -H 'X-Request-ID: estudo-n8n-001' http://127.0.0.1:3030/health
 ```
 
 ## 7. Infraestrutura, Git e publicação
 
-- Preserve as portas publicadas em `127.0.0.1:3000` e `127.0.0.1:5678`, a rede
+- Preserve as portas publicadas em `127.0.0.1:3030` e `127.0.0.1:5679`, a rede
   interna, o health check e o volume persistente do n8n.
 - Preserve a versão fixada do n8n no Compose; sua atualização é tarefa separada.
 - Nunca execute `docker compose down -v` sem autorização explícita.

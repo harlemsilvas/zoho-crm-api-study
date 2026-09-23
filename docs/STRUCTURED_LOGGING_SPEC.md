@@ -295,7 +295,7 @@ Executar a API e chamar:
 ```bash
 curl -i \
   -H 'X-Request-ID: estudo-n8n-001' \
-  'http://127.0.0.1:3000/api/leads?per_page=1'
+  'http://127.0.0.1:3030/api/leads?per_page=1'
 ```
 
 Confirmar:

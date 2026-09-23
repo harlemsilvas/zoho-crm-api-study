@@ -63,8 +63,8 @@ test/zohoClient.test.js
 
 O Compose deve manter:
 
-- API publicada apenas em `127.0.0.1:3000`;
-- n8n publicado apenas em `127.0.0.1:5678`;
+- API publicada apenas em `127.0.0.1:3030`;
+- n8n publicado apenas em `127.0.0.1:5679`;
 - rede interna entre `n8n` e `zoho-api`;
 - volume persistente do n8n;
 - health check da API;

@@ -23,8 +23,8 @@ expõe valores de configuração.
 Validação local:
 
 ```bash
-curl -i http://127.0.0.1:3000/health
-curl -i http://127.0.0.1:3000/readiness
+curl -i http://127.0.0.1:3030/health
+curl -i http://127.0.0.1:3030/readiness
 ```
 
 ## Formato e eventos
@@ -111,9 +111,9 @@ concorrência e correlação HTTP → OAuth → Zoho usando respostas simuladas.
 Com a API atualizada e já em execução, rode:
 
 ```bash
-curl -i -H 'X-Request-ID: estudo-n8n-001' http://127.0.0.1:3000/health
-curl -i -H 'X-Request-ID: estudo-n8n-002' 'http://127.0.0.1:3000/api/leads?per_page=abc'
-curl -i -H 'X-Request-ID: estudo-n8n-003' http://127.0.0.1:3000/rota-inexistente
+curl -i -H 'X-Request-ID: estudo-n8n-001' http://127.0.0.1:3030/health
+curl -i -H 'X-Request-ID: estudo-n8n-002' 'http://127.0.0.1:3030/api/leads?per_page=abc'
+curl -i -H 'X-Request-ID: estudo-n8n-003' http://127.0.0.1:3030/rota-inexistente
 ```
 
 Confirme os status 200, 400 e 404, respectivamente, o header de resposta e uma

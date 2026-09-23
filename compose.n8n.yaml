@@ -21,7 +21,7 @@ services:
       PORT: 3000
 
     ports:
-      - "127.0.0.1:3000:3000"
+      - "127.0.0.1:3030:3000"
 
     healthcheck:
       test:
@@ -51,7 +51,7 @@ services:
         max-file: "5"
 
     ports:
-      - "127.0.0.1:5678:5678"
+      - "127.0.0.1:5679:5678"
 
     environment:
       N8N_HOST: localhost

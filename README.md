@@ -95,7 +95,7 @@ O mesmo ID acompanha a chamada HTTP, a renovação OAuth e a operação externa.
 Com a API em execução, valide sem acessar o Zoho:
 
 ```bash
-curl -i -H 'X-Request-ID: estudo-n8n-001' http://127.0.0.1:3000/health
+curl -i -H 'X-Request-ID: estudo-n8n-001' http://127.0.0.1:3030/health
 ```
 
 Consulte [Observabilidade](docs/OBSERVABILITY.md) para eventos, captura nos testes,
