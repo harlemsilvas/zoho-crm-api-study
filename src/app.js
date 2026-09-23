@@ -1,10 +1,16 @@
 import express from "express";
 import { createLeadsRouter } from "./routes/leadsRoutes.js";
+import { requestContextMiddleware } from "./observability/requestContext.js";
+import { logger as defaultLogger, safeErrorName } from "./observability/logger.js";
+import { createHttpLoggingMiddleware } from "./observability/httpLogging.js";
 
-export function createApp({ crmClient } = {}) {
+export function createApp({ crmClient, logger = defaultLogger } = {}) {
   const app = express();
 
   app.disable("x-powered-by");
+
+  app.use(requestContextMiddleware);
+  app.use(createHttpLoggingMiddleware(logger));
 
   app.use(
     express.json({
@@ -58,6 +64,7 @@ export function createApp({ crmClient } = {}) {
       return;
     }
 
+    response.locals.unhandledErrorName = safeErrorName(error);
     response.status(500).json({
       success: false,
       error: {

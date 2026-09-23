@@ -2,6 +2,16 @@ import {
   validateLeadForCreate,
   validateLeadForUpdate,
 } from "./leadValidation.js";
+import { performance } from "node:perf_hooks";
+import { logger as defaultLogger, safeErrorName } from "./observability/logger.js";
+
+// Only recognized diagnostic codes are logged; upstream text is never copied.
+const safeCodes = new Set([
+  "INVALID_DATA", "INVALID_TOKEN", "AUTHENTICATION_FAILURE", "NO_PERMISSION",
+  "OAUTH_SCOPE_MISMATCH", "DUPLICATE_DATA", "MANDATORY_NOT_FOUND",
+  "INVALID_URL_PATTERN", "LIMIT_EXCEEDED", "INTERNAL_ERROR",
+  "invalid_client", "invalid_code", "invalid_grant",
+]);
 
 export class ZohoApiError extends Error {
   constructor(message, { status, code, details } = {}) {
@@ -14,57 +24,62 @@ export class ZohoApiError extends Error {
 }
 
 export class ZohoCrmClient {
-  constructor(config, fetchImpl = globalThis.fetch) {
+  constructor(config, fetchImpl = globalThis.fetch, { logger = defaultLogger } = {}) {
     if (typeof fetchImpl !== "function") {
       throw new TypeError("Uma implementação de fetch é obrigatória.");
     }
 
     this.config = config;
     this.fetch = fetchImpl;
+    this.logger = logger;
     this.accessToken = null;
     this.accessTokenExpiresAt = 0;
   }
 
   async refreshAccessToken() {
-    const body = new URLSearchParams({
-      grant_type: "refresh_token",
-      client_id: this.config.clientId,
-      client_secret: this.config.clientSecret,
-      refresh_token: this.config.refreshToken,
-    });
-
-    const response = await this.fetch(
-      `${this.config.accountsUrl}/oauth/v2/token`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/x-www-form-urlencoded" },
-        body,
-      },
-    );
-
-    const payload = await readJson(response);
-    assertSuccess(response, payload, "Não foi possível renovar o Access Token");
-
-    if (!payload.access_token) {
-      throw new ZohoApiError("A Zoho não retornou access_token.", {
-        status: response.status,
-        details: payload,
+    return this.#observe("zoho_token_refresh", undefined, async (outcome) => {
+      const body = new URLSearchParams({
+        grant_type: "refresh_token",
+        client_id: this.config.clientId,
+        client_secret: this.config.clientSecret,
+        refresh_token: this.config.refreshToken,
       });
-    }
 
-    this.accessToken = payload.access_token;
-    const expiresInSeconds = Number(payload.expires_in ?? 3600);
-    this.accessTokenExpiresAt = Date.now() + expiresInSeconds * 1000;
+      const response = await this.fetch(
+        `${this.config.accountsUrl}/oauth/v2/token`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/x-www-form-urlencoded" },
+          body,
+        },
+      );
+      outcome.status = response.status;
 
-    if (payload.api_domain) {
-      this.config.apiDomain = payload.api_domain.replace(/\/$/, "");
-    }
+      const payload = await readJson(response);
+      assertSuccess(response, payload, "Não foi possível renovar o Access Token");
 
-    return {
-      apiDomain: this.config.apiDomain,
-      expiresIn: expiresInSeconds,
-      scope: payload.scope,
-    };
+      if (!payload.access_token) {
+        outcome.code = payload.error;
+        throw new ZohoApiError("A Zoho não retornou access_token.", {
+          status: response.status,
+          details: payload,
+        });
+      }
+
+      this.accessToken = payload.access_token;
+      const expiresInSeconds = Number(payload.expires_in ?? 3600);
+      this.accessTokenExpiresAt = Date.now() + expiresInSeconds * 1000;
+
+      if (payload.api_domain) {
+        this.config.apiDomain = payload.api_domain.replace(/\/$/, "");
+      }
+
+      return {
+        apiDomain: this.config.apiDomain,
+        expiresIn: expiresInSeconds,
+        scope: payload.scope,
+      };
+    });
   }
 
   async getAccessToken() {
@@ -80,27 +95,64 @@ export class ZohoCrmClient {
     return this.accessToken;
   }
 
-  async request(path, options = {}) {
-    const token = await this.getAccessToken();
-    const headers = new Headers(options.headers);
-    headers.set("Authorization", `Zoho-oauthtoken ${token}`);
+  async request(path, options = {}, operation) {
+    return this.#observe("zoho_operation", operation, async (outcome) => {
+      const token = await this.getAccessToken();
+      const headers = new Headers(options.headers);
+      headers.set("Authorization", `Zoho-oauthtoken ${token}`);
 
-    if (options.body && !headers.has("Content-Type")) {
-      headers.set("Content-Type", "application/json");
-    }
+      if (options.body && !headers.has("Content-Type")) {
+        headers.set("Content-Type", "application/json");
+      }
 
-    const response = await this.fetch(`${this.config.apiDomain}${path}`, {
-      ...options,
-      headers,
+      const response = await this.fetch(`${this.config.apiDomain}${path}`, {
+        ...options,
+        headers,
+      });
+      outcome.status = response.status;
+      const payload = await readJson(response);
+
+      assertSuccess(
+        response,
+        payload,
+        `Falha na chamada ${options.method ?? "GET"} ${path}`,
+      );
+      if (operation === "create_lead" || operation === "update_lead") {
+        const result = payload?.data?.[0];
+        // Preserve the response contract, but do not log a business failure as success.
+        outcome.failed = result?.status !== "success";
+        outcome.code = result?.code;
+      }
+      return payload;
     });
-    const payload = await readJson(response);
+  }
 
-    assertSuccess(
-      response,
-      payload,
-      `Falha na chamada ${options.method ?? "GET"} ${path}`,
-    );
-    return payload;
+  async #observe(prefix, operation, action) {
+    const started = performance.now();
+    const outcome = {};
+    const metadata = { operation };
+    this.logger.info(`${prefix}_started`, metadata);
+    const complete = (failed, error) => {
+      const code = outcome.code ?? error?.code;
+      const fields = {
+        ...metadata,
+        status: outcome.status,
+        duration_ms: Math.round((performance.now() - started) * 1000) / 1000,
+        ...(safeCodes.has(code) ? { code } : {}),
+        ...(error ? { error_name: safeErrorName(error) } : {}),
+      };
+      this.logger[failed ? "error" : "info"](
+        `${prefix}_${failed ? "failed" : "succeeded"}`, fields,
+      );
+    };
+    try {
+      const result = await action(outcome);
+      complete(outcome.failed);
+      return result;
+    } catch (error) {
+      complete(true, error);
+      throw error;
+    }
   }
 
   async listLeads({ perPage = 10 } = {}) {
@@ -118,7 +170,7 @@ export class ZohoCrmClient {
       per_page: String(perPage),
     });
 
-    return this.request(`/crm/v8/Leads?${params}`);
+    return this.request(`/crm/v8/Leads?${params}`, {}, "list_leads");
   }
 
   async getLead(leadId) {
@@ -139,7 +191,7 @@ export class ZohoCrmClient {
       fields: fields.join(","),
     });
 
-    return this.request(`/crm/v8/Leads/${normalizedLeadId}?${params}`);
+    return this.request(`/crm/v8/Leads/${normalizedLeadId}?${params}`, {}, "get_lead");
   }
 
   async createLead(data) {
@@ -156,7 +208,7 @@ export class ZohoCrmClient {
     return this.request("/crm/v8/Leads", {
       method: "POST",
       body: JSON.stringify(body),
-    });
+    }, "create_lead");
   }
 
   async createStudyLead() {
@@ -221,7 +273,7 @@ export class ZohoCrmClient {
     return this.request(`/crm/v8/Leads/${normalizedLeadId}`, {
       method: "PUT",
       body: JSON.stringify(body),
-    });
+    }, "update_lead");
   }
 }
 

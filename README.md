@@ -83,9 +83,23 @@ Resultado esperado:
 
 ![Testes automatizados executados com sucesso](docs/images/img2.jpg)
 
-Os quatro testes validam o carregamento da configuração, a proteção dos
-segredos, a renovação do token, a consulta de Leads e a criação utilizando
-o API name configurado.
+Os testes validam configuração, operações de Leads, contratos HTTP, contexto de
+requisição, logs estruturados, correlação e proteção de credenciais usando mocks.
+
+## Logs estruturados e correlação
+
+A API retorna `X-Request-ID` e emite logs JSON por requisição e operação Zoho,
+incluindo duração e status, sem registrar credenciais ou payloads de Leads.
+O mesmo ID acompanha a chamada HTTP, a renovação OAuth e a operação externa.
+
+Com a API em execução, valide sem acessar o Zoho:
+
+```bash
+curl -i -H 'X-Request-ID: estudo-n8n-001' http://127.0.0.1:3000/health
+```
+
+Consulte [Observabilidade](docs/OBSERVABILITY.md) para eventos, captura nos testes,
+limites da redação e acompanhamento pelo n8n.
 
 ## Fluxo implementado
 
@@ -102,5 +116,5 @@ o API name configurado.
 - adicionar validação de entrada;
 - criar uma API Express;
 - integrar com n8n;
-- adicionar logs estruturados sem credenciais;
+- validar os logs estruturados no fluxo integrado antes da implantação na VPS;
 - preparar demonstração e documentação para portfólio.

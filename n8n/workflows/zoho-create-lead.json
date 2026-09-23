@@ -78,7 +78,15 @@
         "respondWith": "json",
         "responseBody": "={{ { success: false, error: { code: \"VALIDATION_ERROR\", message: \"Os dados do Lead são inválidos.\", details: $json.errors } } }}",
         "options": {
-          "responseCode": 400
+          "responseCode": 400,
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "X-Request-ID",
+                "value": "={{ $execution.id }}"
+              }
+            ]
+          }
         }
       },
       "type": "n8n-nodes-base.respondToWebhook",
@@ -95,6 +103,9 @@
         "method": "POST",
         "url": "http://zoho-api:3000/api/leads",
         "sendBody": true,
+        "sendHeaders": true,
+        "specifyHeaders": "json",
+        "jsonHeaders": "={{ JSON.stringify({ 'X-Request-ID': $execution.id }) }}",
         "specifyBody": "json",
         "jsonBody": "={{ $json.payload }}",
         "options": {
@@ -163,7 +174,15 @@
         "respondWith": "json",
         "responseBody": "={{ $json.body }}",
         "options": {
-          "responseCode": "={{ $json.statusCode }}"
+          "responseCode": "={{ $json.statusCode }}",
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "X-Request-ID",
+                "value": "={{ $json.headers?.['x-request-id'] ?? $execution.id }}"
+              }
+            ]
+          }
         }
       },
       "type": "n8n-nodes-base.respondToWebhook",
@@ -180,7 +199,15 @@
         "respondWith": "json",
         "responseBody": "={{ $json.body || { success: false, error: { code: \"ZOHO_API_ERROR\", message: \"Não foi possível criar o Lead.\" } } }}",
         "options": {
-          "responseCode": "={{ $json.statusCode }}"
+          "responseCode": "={{ $json.statusCode }}",
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "X-Request-ID",
+                "value": "={{ $json.headers?.['x-request-id'] ?? $execution.id }}"
+              }
+            ]
+          }
         }
       },
       "type": "n8n-nodes-base.respondToWebhook",
