@@ -59,6 +59,21 @@ sudo journalctl --vacuum-time=30d
 Não apagar logs durante uma investigação ativa. Exportar os eventos necessários
 por `request_id` antes de aplicar limpeza.
 
+## Validação de acesso e retenção de logs
+
+Como `zoho-deploy`, valide acesso sem imprimir o conteúdo dos eventos:
+
+```bash
+docker logs --since 1m zoho-study-api >/dev/null
+docker logs --since 1m zoho-study-n8n >/dev/null
+docker inspect --format '{{.Name}} {{.HostConfig.LogConfig.Type}} {{json .HostConfig.LogConfig.Config}}' \
+  zoho-study-api zoho-study-n8n
+```
+
+O resultado esperado para os dois containers é `json-file`, `max-size: 10m` e
+`max-file: 5`. O acesso aos logs deve permanecer restrito ao operador autorizado
+e ao grupo Docker; não conceder permissões adicionais apenas para observabilidade.
+
 ## Registro antes de um deploy
 
 Antes de atualizar, registrar o estado atual sem imprimir segredos:

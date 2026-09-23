@@ -131,6 +131,47 @@ docker logs --since 5m -f zoho-study-api
 O container precisa ter sido reconstruído com o código desta fase para emitir
 os novos eventos. Não confunda logs antigos com a versão atual.
 
+## Consultas, indicadores e alertas
+
+Para seguir uma requisição sem imprimir o log inteiro, filtre pelo ID opaco
+recebido no header `X-Request-ID`:
+
+```bash
+docker logs --since 15m zoho-study-api 2>&1 \
+  | jq -c 'select(.request_id == "ID_DA_REQUISICAO")'
+```
+
+Consultas por evento e status:
+
+```bash
+docker logs --since 15m zoho-study-api 2>&1 | jq -c \
+  'select(.event == "http_request_completed" or .event == "zoho_operation_failed" or .event == "zoho_token_refresh_failed")'
+docker logs --since 15m zoho-study-api 2>&1 | jq -c \
+  'select(.event == "http_request_completed" and (.status >= 500 or .status == 429))'
+```
+
+O relatório versionado resume uma janela sem mostrar IDs ou dados de negócio:
+
+```bash
+docker logs --since 15m zoho-study-api 2>&1 \
+  | node ops/zoho-log-report.mjs
+```
+
+Indicadores iniciais para a operação:
+
+- qualquer `http_5xx` ou `token_refresh_failed` em uma janela de cinco minutos
+  gera alerta;
+- `zoho_operations_failed` gera alerta e exige correlação pelo mesmo
+  `request_id`;
+- p95 de `duration_ms` HTTP acima de `2000` ms por dez minutos indica degradação;
+- `429` indica pressão no rate limiting do Nginx e deve ser separado de erro da
+  API;
+- ausência de eventos só é alerta quando havia uma execução n8n esperada; o
+  health check periódico continua sendo o sinal de disponibilidade.
+
+Nunca copie linhas completas dos logs para tickets ou documentação; preserve
+somente timestamp, evento, status, duração e o ID de correlação necessário.
+
 ## Acompanhamento no n8n e próximos passos
 
 O workflow exportado já configura o nó **Criar Lead na API** para retornar a

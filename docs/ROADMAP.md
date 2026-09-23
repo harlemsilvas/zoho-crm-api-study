@@ -70,10 +70,10 @@ Objetivo: responder rapidamente a falhas sem registrar dados sensíveis.
 - [x] Adicionar e validar na VPS o endpoint `/readiness` separado do `/health`,
   verificando a configuração necessária sem renovar OAuth nem chamar operações
   de Lead. O deploy no SHA `0a18de5` retornou `200` e `zoho_configuration: ok`.
-- Definir formato de consulta dos logs por `request_id`, status e evento.
-- Monitorar latência e taxa de erro HTTP/Zoho.
-- Documentar alertas para falhas de token, 5xx e ausência de eventos.
-- Validar retenção e acesso aos logs na VPS.
+- [x] Definir formato de consulta dos logs por `request_id`, status e evento.
+- [x] Monitorar latência e taxa de erro HTTP/Zoho com relatório p95 e contadores.
+- [x] Documentar alertas para falhas de token, 5xx e ausência de eventos.
+- [x] Validar retenção e acesso aos logs na VPS, sem imprimir eventos.
 
 Aceite: uma falha simulada gera alerta identificável e permite seguir uma
 requisição pelo mesmo ID sem expor segredo ou dado pessoal.
