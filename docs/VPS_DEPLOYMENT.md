@@ -115,6 +115,29 @@ respostas `429` do Nginx, confirmando o bloqueio após o burst. O teste não
 enviou `X-Webhook-Key` e não criou Lead. Revise os valores se o volume real
 de retries ou lotes do n8n mudar.
 
+## Auditoria do usuário de deploy
+
+Auditoria remota executada como `zoho-deploy`, sem shell root e sem ler valores
+de ambiente:
+
+- grupo `docker` presente; `docker ps` funcionou para o usuário;
+- `~/.ssh` com modo `700` e `authorized_keys` com modo `600`, ambos pertencentes
+a `zoho-deploy`;
+- `.env` e `.env.n8n` com modo `600`, sem leitura de conteúdo;
+- o usuário também pertence ao grupo `sudo` e pode usar regras administrativas
+  mediante autenticação. A listagem `sudo -n -l` confirmou ainda o wrapper
+  `clpctlWrapper` sem senha;
+- `unattended-upgrades` está ativo, mas há pacotes Ubuntu atualizáveis;
+- o repositório na VPS está na branch `feat/structured-logs` e possui uma
+  alteração local em `compose.n8n.yaml`, que deve ser preservada antes de
+  qualquer atualização ou pull;
+- a configuração efetiva do `sshd` não foi alterada nem validada com root nesta
+  auditoria. Revisá-la exige uma sessão administrativa planejada.
+
+Não aplicar `apt upgrade`, alterar grupos, permissões ou configuração SSH junto
+com um deploy da aplicação. Fazer backup e manter uma segunda sessão SSH antes
+de qualquer mudança administrativa.
+
 ## Instalação registrada
 
 - Usuário: `zoho-deploy`, com SSH por chave e grupo `docker`.
