@@ -138,6 +138,25 @@ Não aplicar `apt upgrade`, alterar grupos, permissões ou configuração SSH ju
 com um deploy da aplicação. Fazer backup e manter uma segunda sessão SSH antes
 de qualquer mudança administrativa.
 
+## Publicação repetível
+
+A rotina [`ops/publish-vps.sh`](../ops/publish-vps.sh) executa os testes locais,
+publica somente quando recebe `--push` e atualiza a VPS somente quando recebe
+`--deploy`. Ela exige a branch `feat/structured-logs`, executa `git diff --check`,
+recusa alterações rastreadas locais e interrompe o processo se a VPS estiver
+com mudanças não commitadas. Nunca executa `docker compose down -v` e não exibe
+valores de `.env` ou `.env.n8n`.
+
+Uso:
+
+```bash
+VPS_HOST=187.77.61.83 ./ops/publish-vps.sh --push --deploy
+```
+
+A VPS atualmente possui uma alteração local em `compose.n8n.yaml`; a rotina irá
+parar antes do pull até essa alteração ser preservada ou incorporada a uma
+configuração versionada. Isso evita sobrescrever o mapeamento local de portas.
+
 ## Instalação registrada
 
 - Usuário: `zoho-deploy`, com SSH por chave e grupo `docker`.
