@@ -50,9 +50,15 @@ Objetivo: reduzir exposição e facilitar rotação de acesso.
   externamente e retornou `405 Not Allowed`; o limite de corpo permanece em
   `64k` conforme o bloco versionado.
 
-- [x] Avaliar e validar rate limiting no Nginx para o Webhook. A configuração usa `30r/m`, `burst=10`, `nodelay` e resposta `429`, aplicada somente ao `POST /webhook/zoho/leads`. O teste controlado retornou `12` respostas `403` e `33` respostas `429`, sem credencial e sem criar Lead.
+- [x] Avaliar e validar rate limiting no Nginx para o Webhook. A configuração
+  usa `30r/m`, `burst=10`, `nodelay` e resposta `429`, aplicada somente ao
+  `POST /webhook/zoho/leads`. O teste controlado retornou `12` respostas `403`
+  e `33` respostas `429`, sem credencial e sem criar Lead.
 
-- [ ] Revisar permissões do usuário `zoho-deploy`, SSH e atualizações do sistema. Auditoria sem root confirmou SSH `700/600`, acesso ao Docker e `.env*` `600`; há atualizações pendentes e a configuração efetiva do `sshd` ainda requer uma revisão administrativa planejada.
+- [ ] Revisar permissões do usuário `zoho-deploy`, SSH e atualizações do sistema.
+  A auditoria sem root confirmou SSH `700/600`, acesso ao Docker e `.env*`
+  `600`; ainda faltam aplicar/registrar a política final de autenticação e
+  tratar as atualizações Ubuntu pendentes.
 
 Aceite: chave rotacionada sem editar o código, tentativa sem autenticação
 rejeitada e portas internas inacessíveis externamente.
