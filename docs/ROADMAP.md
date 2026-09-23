@@ -10,22 +10,75 @@ risco operacional abaixo.
 Objetivo: conseguir recuperar o n8n e detectar indisponibilidade sem intervenção
 manual prolongada.
 
-- Automatizar backup do volume `zoho-study-n8n-data`.
-- Testar restauração em um volume temporário, sem sobrescrever o volume ativo.
-- Confirmar rotação dos logs Docker (`max-size` e `max-file`).
-- Criar health check periódico para `3030/health`, `5679/healthz` e HTTPS público.
-- Definir retenção de backups e logs, além do procedimento de rollback.
+- [x] Automatizar backup do volume `zoho-study-n8n-data`.
+- [x] Testar restauração em um volume temporário, sem sobrescrever o volume ativo.
+- [x] Confirmar rotação dos logs Docker (`max-size` e `max-file`).
+- [x] Criar health check periódico para `3030/health`, `5679/healthz` e HTTPS público.
+- [x] Definir retenção de backups e logs, além do procedimento de rollback.
 
-Aceite: um backup novo, uma restauração verificada e um health check periódico
-que falha de forma observável quando um serviço fica indisponível. A política de
-retenção e rollback está em [Operations Policy](OPERATIONS_POLICY.md).
+Aceite: um backup novo, uma restauração verificada e um alerta reproduzível de
+serviço indisponível.
 
 ## Prioridade 1 — segurança de borda
 
 Objetivo: reduzir exposição e facilitar rotação de acesso.
 
 - Documentar rotação da credencial `X-Webhook-Key`.
-- Confirmar firewall com somente SSH, HTTP e HTTPS públicos.
+
+  - Alteramos a senha da Credential, e tentamos logar com a senha antiga. Comando curl para teste
+  ```bash
+  read -rsp 'Webhook key: ' WEBHOOK_KEY
+  echo
+
+  TEST_ID="$(date +%s)"
+
+  curl -i -X POST \
+    -H 'Content-Type: application/json' \
+    -H "X-Webhook-Key: $WEBHOOK_KEY" \
+    -d "{
+      \"First_Name\": \"Teste\",
+      \"Last_Name\": \"VPS ${TEST_ID}\",
+      \"Company\": \"Laboratório Zoho\",
+      \"Email\": \"teste.zoho+${TEST_ID}@example.com\",
+      \"Description\": \"Lead fictício criado na validação da VPS\"
+    }" \
+    https://zoho.hdevsolucoes.tech/webhook/zoho/leads
+
+  unset WEBHOOK_KEY
+  ```
+## Resposta esperada :
+```http
+HTTP/1.1 403 Forbidden
+Server: nginx
+Date: Wed, 23 Sep 2026 17:22:31 GMT
+Transfer-Encoding: chunked
+Connection: keep-alive
+WWW-Authenticate: Basic realm="Webhook"
+
+Authorization data is wrong
+```
+
+- [ ] Confirmar firewall com somente SSH, HTTP e HTTPS públicos.
+
+  Inspeção sem alterar regras:
+
+  ```bash
+  sudo ufw status verbose
+  sudo ufw status numbered
+  sudo ss -ltnp
+  ```
+
+  O firewall público deve permitir somente `22/tcp`, `80/tcp` e `443/tcp`.
+  As portas `3030`, `5678` e `5679` devem aparecer apenas ligadas a
+  `127.0.0.1`, ou não aparecerem como listeners externos. Se a VPS usar regras
+  do provedor além do UFW, conferir também o security group/firewall de rede.
+
+  Não executar `ufw reset` nem adicionar regras antes de registrar o estado
+  atual e confirmar uma sessão SSH alternativa.
+```bash
+
+```
+
 - Restringir métodos e tamanho de corpo no Nginx quando o workflow não precisar
   de outras opções.
 - Avaliar rate limiting no Nginx para o Webhook.
