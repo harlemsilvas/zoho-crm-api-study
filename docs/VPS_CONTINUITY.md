@@ -14,6 +14,7 @@ A integração local foi validada com 53 testes e uma criação controlada via
 - Health público do n8n retornou `200 OK`.
 - Webhook autenticado criou um Lead fictício com resposta `201`.
 - O mesmo `X-Request-ID` apareceu nos eventos HTTP e Zoho.
+- Backup e restauração do volume do n8n foram validados em volume temporário.
 
 Não registrar neste documento IPs privados, credenciais, tokens, senhas ou
 conteúdo de `.env` e `.env.n8n`.
@@ -149,7 +150,7 @@ docker compose --env-file .env.n8n -f compose.n8n.yaml up -d n8n
 - Volume persiste após reinício.
 - Workflow propaga `X-Request-ID`.
 - Uma execução controlada retorna `201` e correlaciona os logs.
-- Logs Docker têm limite de tamanho e o backup do volume foi executado.
+- Logs Docker têm limite de tamanho e o backup do volume foi restaurado com sucesso.
 - Nenhum segredo aparece em Git, logs ou documentação.
 
 ## Encerramento

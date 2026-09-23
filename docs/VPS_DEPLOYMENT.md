@@ -26,6 +26,8 @@ loopback. O Docker usa a rede interna entre os containers.
 - n8n: `127.0.0.1:5679` no host e `5678` no container.
 - Workflow: `Zoho CRM — Criar Lead via Webhook`.
 - Autenticação: Header Auth com `X-Webhook-Key`, configurada no n8n.
+- Backup do volume `zoho-study-n8n-data` criado e restauração validada em volume
+  temporário, sem alterar o ambiente ativo.
 
 ## Validação executada
 
@@ -62,3 +64,5 @@ estado do n8n e precisa de backup antes de mudanças relevantes.
 - Não imprimir tokens, credenciais, payloads ou valores do Header Auth.
 - Rotacionar `X-Webhook-Key` se houver suspeita de exposição.
 - Fazer backup e testar restauração do volume antes de upgrades do n8n.
+- O último backup restaurado com sucesso deve ser mantido fora do host quando a
+  política de continuidade exigir proteção contra perda da VPS.
