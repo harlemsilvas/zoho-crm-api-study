@@ -175,6 +175,14 @@ Se a VPS possuir uma alteração local em `compose.n8n.yaml`, a rotina irá para
 antes do push ou pull até essa alteração ser preservada ou incorporada a uma
 configuração versionada. Isso evita sobrescrever o mapeamento local de portas.
 
+## Registro de versão do deploy
+
+A rotina registra fora do repositório, em
+`~/.local/state/zoho-crm-api/`, a data UTC, a branch, o commit e as referências
+IDs das imagens da API e do n8n. `latest-deploy` é o último deploy validado e
+`previous-deploy` permite identificar a versão anterior para rollback. Esses
+arquivos não contêm `.env`, credenciais ou payloads.
+
 ## Último deploy validado
 
 A rotina de publicação implantou o SHA `0a18de5` na branch

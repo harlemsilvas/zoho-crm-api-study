@@ -87,6 +87,18 @@ curl -fsS http://127.0.0.1:3030/readiness >/dev/null
 curl -fsS http://127.0.0.1:5679/healthz >/dev/null
 curl -fsSI https://zoho.hdevsolucoes.tech/healthz >/dev/null
 docker compose --env-file .env.n8n -f compose.n8n.yaml -f compose.vps.yaml ps
-git rev-parse HEAD
+state_dir="$HOME/.local/state/zoho-crm-api"
+mkdir -p "$state_dir"
+if [[ -f "$state_dir/latest-deploy" ]]; then
+  cp "$state_dir/latest-deploy" "$state_dir/previous-deploy"
+fi
+{
+  printf 'deployed_at_utc=%s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+  printf 'branch=%s\n' "$branch"
+  printf 'commit=%s\n' "$(git rev-parse HEAD)"
+  printf 'api_image=%s\n' "$(docker inspect --format '{{.Config.Image}} {{.Image}}' zoho-study-api)"
+  printf 'n8n_image=%s\n' "$(docker inspect --format '{{.Config.Image}} {{.Image}}' zoho-study-n8n)"
+} > "$state_dir/latest-deploy"
+cat "$state_dir/latest-deploy"
 REMOTE
 fi

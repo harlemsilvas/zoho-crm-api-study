@@ -86,8 +86,10 @@ Objetivo: tornar atualizações previsíveis e reversíveis.
   `5679`, sem incluir valores secretos. A validação no host fica pendente do
   próximo deploy.
 - [x] Automatizar `npm test`, `git diff --check` e validação do workflow no CI.
-- Registrar versão da imagem, commit implantado e data do deploy.
-- Definir procedimento de rollback para a imagem e para o workflow n8n.
+- [x] Registrar versão da imagem, commit implantado e data do deploy na rotina;
+  o registro será criado no próximo deploy com o override da VPS.
+- [x] Definir procedimento de rollback para a imagem e para o workflow n8n,
+  usando os registros `latest-deploy` e `previous-deploy`.
 
 Aceite: um deploy de teste reproduz a configuração documentada e um rollback
 restaura a versão anterior sem perder o volume do n8n.

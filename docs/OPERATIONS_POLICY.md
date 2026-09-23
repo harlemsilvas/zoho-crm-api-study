@@ -86,12 +86,22 @@ docker image ls --format '{{.Repository}}:{{.Tag}} {{.ID}} {{.CreatedAt}}'
 ```
 
 Executar um backup do volume e guardar o SHA junto do nome do arquivo. O arquivo
-de ambiente permanece somente no host.
+de ambiente permanece somente no host. A rotina de publicação mantém o último
+e o penúltimo registro sem segredos em:
+
+```bash
+cat ~/.local/state/zoho-crm-api/latest-deploy
+cat ~/.local/state/zoho-crm-api/previous-deploy
+```
+
+Cada registro contém apenas data UTC, branch, commit e referências/IDs das
+imagens da API e do n8n.
 
 ## Rollback da aplicação
 
 1. Confirmar o incidente, salvar os logs recentes e interromper novos deploys.
-2. Identificar o último SHA saudável registrado.
+2. Identificar o último SHA saudável e as imagens no registro
+   `~/.local/state/zoho-crm-api/previous-deploy`.
 3. Fazer backup do estado atual do n8n antes de trocar a versão.
 4. Preservar a configuração local de portas `3030` e `5679`.
 5. Voltar o código para o SHA saudável e reconstruir:
@@ -104,7 +114,9 @@ docker compose --env-file .env.n8n -f compose.n8n.yaml -f compose.vps.yaml up -d
 ```
 
 6. Validar API, n8n, HTTPS, workflow e `X-Request-ID`.
-7. Registrar a causa, os SHAs, o horário e o resultado. Depois do incidente,
+7. Regerar `latest-deploy` somente após a validação passar; manter
+   `previous-deploy` como referência de retorno.
+8. Registrar a causa, os SHAs, o horário e o resultado. Depois do incidente,
    retornar a uma branch de deploy controlada; não deixar a VPS permanentemente
    em um checkout anônimo sem registro.
 
