@@ -72,9 +72,11 @@ curl -k -i -X POST https://zoho.hdevsolucoes.tech/webhook/zoho/leads \
   -d '{}'
 ```
 
-O primeiro comando foi validado na VPS e retornou `405 Not Allowed`. O segundo
-deve alcançar o workflow e retornar a validação prevista para um corpo vazio.
-Não enviar a chave do webhook ou dados reais durante esse teste.
+A validação na VPS confirmou `200` para `/healthz` e `405 Not Allowed` para
+um método não permitido no webhook, sem aplicar o limite às rotas normais. O
+POST sem credencial deve alcançar o workflow e retornar a validação de
+autenticação prevista, sem criar Lead. Não enviar a chave do webhook ou dados
+reais durante esse teste.
 
 ## Rate limiting do webhook
 
