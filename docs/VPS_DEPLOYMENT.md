@@ -45,6 +45,37 @@ sudo ss -ltnp | grep -E ':(22|80|443|3030|5678|5679)\b'
 Não abrir `3030`, `5678` ou `5679` externamente. Mudanças no firewall exigem
 registrar o estado atual e manter uma sessão SSH alternativa aberta.
 
+## Restrição do webhook no Nginx
+
+A interface e a API do n8n continuam usando os métodos necessários. A restrição
+é aplicada somente a `POST /webhook/zoho/leads`:
+
+- métodos diferentes de `POST` retornam `405 Method Not Allowed`;
+- corpos acima de `64k` retornam `413 Request Entity Too Large`;
+- o `X-Request-ID` recebido é encaminhado ao n8n para preservar a correlação.
+
+O bloco versionado em
+[`ops/nginx/zoho-webhook-location.conf.example`](../ops/nginx/zoho-webhook-location.conf.example)
+deve ser inserido no `server` HTTPS, antes do `location /` geral. Na VPS:
+
+```bash
+sudo nginx -t
+sudo systemctl reload nginx
+```
+
+Validação sem criar Lead:
+
+```bash
+curl -k -i -X GET https://zoho.hdevsolucoes.tech/webhook/zoho/leads
+curl -k -i -X POST https://zoho.hdevsolucoes.tech/webhook/zoho/leads \
+  -H 'Content-Type: application/json' \
+  -d '{}'
+```
+
+O primeiro comando deve retornar `405`. O segundo deve alcançar o workflow e
+retornar a validação prevista para um corpo vazio. Não enviar a chave do webhook
+ou dados reais durante esse teste.
+
 ## Instalação registrada
 
 - Usuário: `zoho-deploy`, com SSH por chave e grupo `docker`.
