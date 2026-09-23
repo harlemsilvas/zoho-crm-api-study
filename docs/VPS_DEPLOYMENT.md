@@ -16,6 +16,35 @@ Internet → HTTPS :443 → Nginx
 O Nginx é o único ponto público. A API e a porta do host do n8n ficam presas a
 loopback. O Docker usa a rede interna entre os containers.
 
+## Portas e firewall
+
+A exposição deste projeto é a seguinte:
+
+| Serviço | Endereço no host | Destino | Exposição |
+| --- | --- | --- | --- |
+| API | `127.0.0.1:3030` | `zoho-api:3000` | somente local |
+| n8n | `127.0.0.1:5679` | `n8n:5678` | somente local |
+| Nginx HTTP | `0.0.0.0:80` | redirecionamento/proxy | público |
+| Nginx HTTPS | `0.0.0.0:443` | proxy para o n8n | público |
+
+A validação do UFW confirmou entrada permitida para SSH (`22/tcp`), HTTP
+(`80/tcp`) e HTTPS (`443/tcp`) usados pela operação deste projeto. A porta
+`5678/tcp` está negada no firewall. O listener externo em `0.0.0.0:5678`
+pertence ao container `socialbot_n8n`, outro serviço da VPS; ele não faz parte
+desta aplicação. A API e o n8n deste projeto permanecem vinculados a
+`127.0.0.1`.
+
+Comandos de inspeção, sem alteração de regras:
+
+```bash
+sudo ufw status verbose
+sudo ufw status numbered
+sudo ss -ltnp | grep -E ':(22|80|443|3030|5678|5679)\b'
+```
+
+Não abrir `3030`, `5678` ou `5679` externamente. Mudanças no firewall exigem
+registrar o estado atual e manter uma sessão SSH alternativa aberta.
+
 ## Instalação registrada
 
 - Usuário: `zoho-deploy`, com SSH por chave e grupo `docker`.

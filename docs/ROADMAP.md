@@ -23,66 +23,34 @@ serviço indisponível.
 
 Objetivo: reduzir exposição e facilitar rotação de acesso.
 
-- Documentar rotação da credencial `X-Webhook-Key`.
+- [x] Documentar rotação da credencial `X-Webhook-Key`.
+  A chave antiga foi rejeitada com `403 Forbidden` após a rotação. O valor da
+  chave não é armazenado neste repositório.
 
-  - Alteramos a senha da Credential, e tentamos logar com a senha antiga. Comando curl para teste
-  ```bash
-  read -rsp 'Webhook key: ' WEBHOOK_KEY
-  echo
+- [x] Confirmar firewall com somente SSH, HTTP e HTTPS públicos para este projeto.
+  A inspeção na VPS confirmou UFW ativo, com entrada permitida para `22/tcp`,
+  `80/tcp` e `443/tcp`. As portas da aplicação permanecem restritas ao
+  loopback: API em `127.0.0.1:3030` e n8n em `127.0.0.1:5679`. A porta
+  `5678/tcp` está negada no UFW; o listener externo nessa porta pertence a
+  outro serviço da VPS e está fora deste projeto.
 
-  TEST_ID="$(date +%s)"
-
-  curl -i -X POST \
-    -H 'Content-Type: application/json' \
-    -H "X-Webhook-Key: $WEBHOOK_KEY" \
-    -d "{
-      \"First_Name\": \"Teste\",
-      \"Last_Name\": \"VPS ${TEST_ID}\",
-      \"Company\": \"Laboratório Zoho\",
-      \"Email\": \"teste.zoho+${TEST_ID}@example.com\",
-      \"Description\": \"Lead fictício criado na validação da VPS\"
-    }" \
-    https://zoho.hdevsolucoes.tech/webhook/zoho/leads
-
-  unset WEBHOOK_KEY
-  ```
-## Resposta esperada :
-```http
-HTTP/1.1 403 Forbidden
-Server: nginx
-Date: Wed, 23 Sep 2026 17:22:31 GMT
-Transfer-Encoding: chunked
-Connection: keep-alive
-WWW-Authenticate: Basic realm="Webhook"
-
-Authorization data is wrong
-```
-
-- [ ] Confirmar firewall com somente SSH, HTTP e HTTPS públicos.
-
-  Inspeção sem alterar regras:
+  Comandos de inspeção, sem alteração de regras:
 
   ```bash
   sudo ufw status verbose
   sudo ufw status numbered
-  sudo ss -ltnp
+  sudo ss -ltnp | grep -E ':(22|80|443|3030|5678|5679)\b'
   ```
-
-  O firewall público deve permitir somente `22/tcp`, `80/tcp` e `443/tcp`.
-  As portas `3030`, `5678` e `5679` devem aparecer apenas ligadas a
-  `127.0.0.1`, ou não aparecerem como listeners externos. Se a VPS usar regras
-  do provedor além do UFW, conferir também o security group/firewall de rede.
 
   Não executar `ufw reset` nem adicionar regras antes de registrar o estado
   atual e confirmar uma sessão SSH alternativa.
-```bash
 
-```
+- [ ] Restringir métodos e tamanho de corpo no Nginx quando o workflow não
+  precisar de outras opções.
 
-- Restringir métodos e tamanho de corpo no Nginx quando o workflow não precisar
-  de outras opções.
-- Avaliar rate limiting no Nginx para o Webhook.
-- Revisar permissões do usuário `zoho-deploy`, SSH e atualizações do sistema.
+- [ ] Avaliar rate limiting no Nginx para o Webhook.
+
+- [ ] Revisar permissões do usuário `zoho-deploy`, SSH e atualizações do sistema.
 
 Aceite: chave rotacionada sem editar o código, tentativa sem autenticação
 rejeitada e portas internas inacessíveis externamente.
