@@ -76,6 +76,42 @@ O primeiro comando foi validado na VPS e retornou `405 Not Allowed`. O segundo
 deve alcançar o workflow e retornar a validação prevista para um corpo vazio.
 Não enviar a chave do webhook ou dados reais durante esse teste.
 
+## Rate limiting do webhook
+
+A avaliação recomenda limitar somente `POST /webhook/zoho/leads` por endereço IP,
+sem usar `X-Forwarded-For` como chave. A configuração proposta é `30r/m` com
+`burst=10` e `nodelay`: permite um pico curto de até dez requisições e depois
+reduz a taxa sustentada, retornando `429 Too Many Requests` quando o limite é
+excedido. O valor deve ser revisto se o n8n passar a processar lotes maiores ou
+usar retries mais frequentes.
+
+O arquivo
+[`ops/nginx/zoho-webhook-rate-limit-http.conf.example`](../ops/nginx/zoho-webhook-rate-limit-http.conf.example)
+deve ser incluído uma única vez no contexto `http {}` do Nginx. A diretiva
+`limit_req` correspondente já está no bloco da rota em
+[`ops/nginx/zoho-webhook-location.conf.example`](../ops/nginx/zoho-webhook-location.conf.example).
+Após copiar os dois blocos para a VPS:
+
+```bash
+sudo nginx -t
+sudo systemctl reload nginx
+```
+
+Validação controlada, sem credencial e sem criar Lead:
+
+```bash
+for i in $(seq 1 45); do
+  curl -ksS -o /dev/null -w '%{http_code}\n' \
+    -X POST https://zoho.hdevsolucoes.tech/webhook/zoho/leads \
+    -H 'Content-Type: application/json' \
+    -d '{}'
+done | sort | uniq -c
+```
+
+O resultado deve mostrar respostas `429` depois do burst. Interrompa o teste se
+houver impacto nos recursos do n8n e remova a configuração caso o limite precise
+ser ajustado. O teste não envia `X-Webhook-Key`, portanto não deve criar Lead.
+
 ## Instalação registrada
 
 - Usuário: `zoho-deploy`, com SSH por chave e grupo `docker`.

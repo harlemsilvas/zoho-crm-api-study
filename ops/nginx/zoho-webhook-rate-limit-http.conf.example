@@ -1,0 +1,3 @@
+# Inclua este bloco dentro do contexto http {} do nginx.conf,
+# uma única vez, antes dos blocos server {}.
+limit_req_zone $binary_remote_addr zone=zoho_webhook:10m rate=30r/m;

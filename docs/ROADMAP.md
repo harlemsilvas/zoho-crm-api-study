@@ -50,7 +50,7 @@ Objetivo: reduzir exposição e facilitar rotação de acesso.
   externamente e retornou `405 Not Allowed`; o limite de corpo permanece em
   `64k` conforme o bloco versionado.
 
-- [ ] Avaliar rate limiting no Nginx para o Webhook.
+- [x] Avaliar rate limiting no Nginx para o Webhook. A recomendação é `30r/m`, `burst=10`, `nodelay` e resposta `429`, aplicada somente ao `POST /webhook/zoho/leads`; a aplicação na VPS deve ser validada com o teste controlado documentado.
 
 - [ ] Revisar permissões do usuário `zoho-deploy`, SSH e atualizações do sistema.
 
