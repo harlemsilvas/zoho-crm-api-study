@@ -8,7 +8,8 @@
     "start": "node --env-file=.env src/index.js",
     "start:api": "node --env-file=.env src/server.js",
     "dev:api": "node --watch --env-file=.env src/server.js",
-    "test": "node --test"
+    "test": "node --test",
+    "validate:workflow": "node scripts/validate-workflow.mjs"
   },
   "engines": {
     "node": ">=20.6"

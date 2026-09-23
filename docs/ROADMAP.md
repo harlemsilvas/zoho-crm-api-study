@@ -85,7 +85,7 @@ Objetivo: tornar atualizações previsíveis e reversíveis.
 - [x] Criar `compose.vps.yaml`, um override versionado para a VPS com `3030` e
   `5679`, sem incluir valores secretos. A validação no host fica pendente do
   próximo deploy.
-- Automatizar `npm test`, `git diff --check` e validação do workflow no CI.
+- [x] Automatizar `npm test`, `git diff --check` e validação do workflow no CI.
 - Registrar versão da imagem, commit implantado e data do deploy.
 - Definir procedimento de rollback para a imagem e para o workflow n8n.
 
