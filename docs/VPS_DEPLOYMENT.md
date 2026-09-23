@@ -72,9 +72,9 @@ curl -k -i -X POST https://zoho.hdevsolucoes.tech/webhook/zoho/leads \
   -d '{}'
 ```
 
-O primeiro comando deve retornar `405`. O segundo deve alcançar o workflow e
-retornar a validação prevista para um corpo vazio. Não enviar a chave do webhook
-ou dados reais durante esse teste.
+O primeiro comando foi validado na VPS e retornou `405 Not Allowed`. O segundo
+deve alcançar o workflow e retornar a validação prevista para um corpo vazio.
+Não enviar a chave do webhook ou dados reais durante esse teste.
 
 ## Instalação registrada
 

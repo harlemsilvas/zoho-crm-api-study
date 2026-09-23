@@ -45,8 +45,10 @@ Objetivo: reduzir exposição e facilitar rotação de acesso.
   Não executar `ufw reset` nem adicionar regras antes de registrar o estado
   atual e confirmar uma sessão SSH alternativa.
 
-- [ ] Restringir métodos e tamanho de corpo no Nginx quando o workflow não
-  precisar de outras opções.
+- [x] Restringir métodos e tamanho de corpo no Nginx quando o workflow não
+  precisar de outras opções. O endpoint `GET /webhook/zoho/leads` foi validado
+  externamente e retornou `405 Not Allowed`; o limite de corpo permanece em
+  `64k` conforme o bloco versionado.
 
 - [ ] Avaliar rate limiting no Nginx para o Webhook.
 
