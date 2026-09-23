@@ -104,14 +104,23 @@ imagens da API e do n8n.
    `~/.local/state/zoho-crm-api/previous-deploy`.
 3. Fazer backup do estado atual do n8n antes de trocar a versão.
 4. Preservar a configuração local de portas `3030` e `5679`.
-5. Voltar o código para o SHA saudável e reconstruir:
+5. Antes de trocar o checkout, confirmar que o SHA saudável contém a
+   infraestrutura atualmente usada. O teste deve falhar sem alterar o checkout
+   se algum arquivo estiver ausente:
 
 ```bash
 git fetch origin
 git status --short
+git cat-file -e SHA_SAUDAVEL:compose.n8n.yaml
+git cat-file -e SHA_SAUDAVEL:compose.vps.yaml
 git switch --detach SHA_SAUDAVEL
 docker compose --env-file .env.n8n -f compose.n8n.yaml -f compose.vps.yaml up -d --build
 ```
+
+Se qualquer `git cat-file` falhar, não faça o rollback por checkout: esse SHA
+é anterior à configuração de produção e não é compatível com este procedimento.
+Escolha outro SHA que contenha os dois arquivos Compose ou faça um rollback da
+imagem usando uma configuração de produção preservada separadamente.
 
 6. Validar API, n8n, HTTPS, workflow e `X-Request-ID`.
 7. Regerar `latest-deploy` somente após a validação passar; manter

@@ -155,7 +155,7 @@ export class ZohoCrmClient {
     }
   }
 
-  async listLeads({ perPage = 10 } = {}) {
+  async listLeads({ perPage = 10, page = 1, company } = {}) {
     const fields = [
       "First_Name",
       "Last_Name",
@@ -168,7 +168,12 @@ export class ZohoCrmClient {
     const params = new URLSearchParams({
       fields: fields.join(","),
       per_page: String(perPage),
+      page: String(page),
     });
+
+    if (company) {
+      params.set("criteria", `(Company:equals:${company})`);
+    }
 
     return this.request(`/crm/v8/Leads?${params}`, {}, "list_leads");
   }

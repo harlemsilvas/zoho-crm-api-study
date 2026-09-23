@@ -80,6 +80,35 @@ export function createApp({ crmClient, logger = defaultLogger } = {}) {
       return;
     }
 
+    if (error?.name === "ZohoApiError") {
+      const upstreamCode = getZohoPublicErrorCode(error.status);
+      response.status(502).json({
+        success: false,
+        error: {
+          code: upstreamCode,
+          message: getZohoPublicErrorMessage(upstreamCode),
+        },
+      });
+
+      return;
+    }
+
+    if (
+      Number.isInteger(error?.statusCode)
+      && error.statusCode >= 400
+      && error.statusCode < 500
+    ) {
+      response.status(error.statusCode).json({
+        success: false,
+        error: {
+          code: error.code ?? "REQUEST_ERROR",
+          message: error.message,
+        },
+      });
+
+      return;
+    }
+
     if (error instanceof TypeError) {
       response.status(400).json({
         success: false,
@@ -103,4 +132,28 @@ export function createApp({ crmClient, logger = defaultLogger } = {}) {
   });
 
   return app;
+}
+
+function getZohoPublicErrorCode(status) {
+  if (status === 401 || status === 403) {
+    return "ZOHO_AUTH_ERROR";
+  }
+
+  if (status === 429) {
+    return "ZOHO_RATE_LIMITED";
+  }
+
+  return "ZOHO_API_ERROR";
+}
+
+function getZohoPublicErrorMessage(code) {
+  if (code === "ZOHO_AUTH_ERROR") {
+    return "Não foi possível autenticar na Zoho.";
+  }
+
+  if (code === "ZOHO_RATE_LIMITED") {
+    return "A Zoho limitou a requisição. Tente novamente mais tarde.";
+  }
+
+  return "Não foi possível concluir a operação na Zoho.";
 }

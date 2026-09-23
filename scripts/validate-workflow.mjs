@@ -18,6 +18,10 @@ assert.equal(createLead?.parameters?.method, "POST", "nó da API deve usar POST"
 assert.equal(createLead?.parameters?.url, "http://zoho-api:3000/api/leads", "destino interno da API alterado");
 assert.match(createLead?.parameters?.jsonHeaders ?? "", /X-Request-ID/);
 assert.match(createLead?.parameters?.jsonHeaders ?? "", /\$execution\.id/);
+const responseOptions = createLead?.parameters?.options?.response?.response;
+assert.equal(responseOptions?.fullResponse, true, "API deve retornar resposta completa");
+assert.equal(responseOptions?.neverError, true, "API deve deixar o workflow tratar erros");
+assert.equal(responseOptions?.responseFormat, "json", "API deve retornar JSON");
 
 for (const name of [
   "Responder validação inválida",
@@ -34,3 +38,22 @@ for (const name of [
 
 assert.ok(Object.keys(workflow.connections ?? {}).length > 0, "workflow sem conexões");
 console.log("workflow validation: ok");
+
+const invalidResponse = byName.get("Responder validação inválida");
+assert.equal(invalidResponse?.parameters?.options?.responseCode, 400, "validação deve retornar 400");
+assert.match(invalidResponse?.parameters?.responseBody ?? "", /VALIDATION_ERROR/);
+assert.match(invalidResponse?.parameters?.responseBody ?? "", /details/);
+
+const successResponse = byName.get("Responder sucesso");
+assert.match(String(successResponse?.parameters?.options?.responseCode), /\$json\.statusCode/);
+assert.equal(successResponse?.parameters?.responseBody, "={{ $json.body }}");
+
+const errorResponse = byName.get("Responder erro da API");
+assert.match(String(errorResponse?.parameters?.options?.responseCode), /\$json\.statusCode/);
+assert.match(errorResponse?.parameters?.responseBody ?? "", /ZOHO_API_ERROR/);
+
+const connections = workflow.connections ?? {};
+assert.equal(connections["Lead válido?"]?.main?.[0]?.[0]?.node, "Criar Lead na API");
+assert.equal(connections["Lead válido?"]?.main?.[1]?.[0]?.node, "Responder validação inválida");
+assert.equal(connections["API respondeu com sucesso?"]?.main?.[0]?.[0]?.node, "Responder sucesso");
+assert.equal(connections["API respondeu com sucesso?"]?.main?.[1]?.[0]?.node, "Responder erro da API");

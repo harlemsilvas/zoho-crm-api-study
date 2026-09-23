@@ -29,3 +29,37 @@ test("workflow propaga o ID da execução para a API e para todas as respostas",
     assert.match(responseHeaders.entries[0].value, /\$execution\.id/);
   }
 });
+
+
+test("workflow mantém o contrato público de validação, sucesso e erro", () => {
+  const invalid = nodeNamed("Responder validação inválida");
+  assert.equal(invalid.parameters.options.responseCode, 400);
+  assert.match(invalid.parameters.responseBody, /VALIDATION_ERROR/);
+  assert.match(invalid.parameters.responseBody, /details/);
+
+  const success = nodeNamed("Responder sucesso");
+  assert.match(String(success.parameters.options.responseCode), /\$json\.statusCode/);
+  assert.equal(success.parameters.responseBody, "={{ $json.body }}");
+
+  const failure = nodeNamed("Responder erro da API");
+  assert.match(String(failure.parameters.options.responseCode), /\$json\.statusCode/);
+  assert.match(failure.parameters.responseBody, /ZOHO_API_ERROR/);
+  assert.match(failure.parameters.responseBody, /Não foi possível criar o Lead/);
+});
+
+test("workflow mantém o contrato do nó HTTP e os caminhos públicos", () => {
+  const request = nodeNamed("Criar Lead na API");
+  const responseOptions = request.parameters.options?.response?.response;
+
+  assert.equal(request.parameters.method, "POST");
+  assert.equal(request.parameters.url, "http://zoho-api:3000/api/leads");
+  assert.equal(responseOptions.fullResponse, true);
+  assert.equal(responseOptions.neverError, true);
+  assert.equal(responseOptions.responseFormat, "json");
+
+  const connections = workflow.connections;
+  assert.deepEqual(connections["Lead válido?"]?.main?.[0]?.[0]?.node, "Criar Lead na API");
+  assert.deepEqual(connections["Lead válido?"]?.main?.[1]?.[0]?.node, "Responder validação inválida");
+  assert.deepEqual(connections["API respondeu com sucesso?"]?.main?.[0]?.[0]?.node, "Responder sucesso");
+  assert.deepEqual(connections["API respondeu com sucesso?"]?.main?.[1]?.[0]?.node, "Responder erro da API");
+});

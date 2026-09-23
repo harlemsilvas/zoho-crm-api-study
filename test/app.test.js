@@ -215,6 +215,49 @@ test("JSON inválido retorna 400", async () => {
   });
 });
 
+test("falhas Zoho retornam códigos públicos padronizados", async (t) => {
+  const upstreamFailures = [
+    [401, "ZOHO_AUTH_ERROR", "Não foi possível autenticar na Zoho."],
+    [429, "ZOHO_RATE_LIMITED", "A Zoho limitou a requisição. Tente novamente mais tarde."],
+    [500, "ZOHO_API_ERROR", "Não foi possível concluir a operação na Zoho."],
+  ];
+
+  for (const [status, code, message] of upstreamFailures) {
+    const app = createApp({
+      crmClient: {
+        ...crmClient,
+        async createLead() {
+          const error = new Error("mensagem externa não deve aparecer");
+          error.name = "ZohoApiError";
+          error.status = status;
+          throw error;
+        },
+      },
+    });
+    const testServer = app.listen(0, "127.0.0.1");
+    t.after(() => new Promise((resolve, reject) => {
+      testServer.close((error) => error ? reject(error) : resolve());
+    }));
+    await new Promise((resolve, reject) => {
+      testServer.once("listening", resolve);
+      testServer.once("error", reject);
+    });
+
+    const address = testServer.address();
+    const response = await fetch(`http://127.0.0.1:${address.port}/api/leads`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ Last_Name: "Falha", Company: "HDev" }),
+    });
+
+    assert.equal(response.status, 502);
+    assert.deepEqual(await response.json(), {
+      success: false,
+      error: { code, message },
+    });
+  }
+});
+
 test("GET /api/leads retorna a lista de Leads", async () => {
   const response = await fetch(`${baseUrl}/api/leads?per_page=5`);
 
@@ -226,7 +269,38 @@ test("GET /api/leads retorna a lista de Leads", async () => {
   assert.equal(body.info.count, 1);
   assert.deepEqual(crmCalls.listLeads.at(-1), {
     perPage: 5,
+    page: 1,
   });
+});
+
+test("GET /api/leads aceita página e filtro de empresa", async () => {
+  const response = await fetch(
+    `${baseUrl}/api/leads?page=2&per_page=25&company=HDev%20Soluções`,
+  );
+
+  assert.equal(response.status, 200);
+  assert.deepEqual(crmCalls.listLeads.at(-1), {
+    perPage: 25,
+    page: 2,
+    company: "HDev Soluções",
+  });
+});
+
+test("GET /api/leads rejeita página e filtro inválidos", async () => {
+  for (const [query, message] of [
+    ["page=abc", "page deve ser um número inteiro."],
+    ["company=", "company não pode ficar vazio."],
+    ["company=%28HDev%29", "company possui um formato inválido."],
+  ]) {
+    const response = await fetch(`${baseUrl}/api/leads?${query}`);
+    const body = await response.json();
+
+    assert.equal(response.status, 400);
+    assert.deepEqual(body.error, {
+      code: "VALIDATION_ERROR",
+      message,
+    });
+  }
 });
 
 test("GET /api/leads/:id retorna um Lead", async () => {
@@ -282,6 +356,71 @@ test("POST /api/leads cria um Lead", async () => {
   assert.deepEqual(crmCalls.createLead.at(-1), lead);
 });
 
+test("POST /api/leads reutiliza a resposta para o mesmo X-Request-ID", async () => {
+  const lead = {
+    Last_Name: "Reenvio idempotente",
+    Company: "HDev Soluções",
+  };
+  const headers = {
+    "Content-Type": "application/json",
+    "X-Request-ID": "n8n-idempotency-001",
+  };
+
+  const firstResponse = await fetch(`${baseUrl}/api/leads`, {
+    method: "POST",
+    headers,
+    body: JSON.stringify(lead),
+  });
+  const firstBody = await firstResponse.json();
+
+  const replayResponse = await fetch(`${baseUrl}/api/leads`, {
+    method: "POST",
+    headers,
+    body: JSON.stringify(lead),
+  });
+  const replayBody = await replayResponse.json();
+
+  assert.equal(firstResponse.status, 201);
+  assert.equal(replayResponse.status, 200);
+  assert.equal(replayResponse.headers.get("X-Idempotent-Replay"), "true");
+  assert.deepEqual(replayBody, firstBody);
+  assert.equal(
+    crmCalls.createLead.filter(
+      (call) => call.Last_Name === lead.Last_Name,
+    ).length,
+    1,
+  );
+});
+
+test("POST /api/leads rejeita chave reutilizada com payload diferente", async () => {
+  const headers = {
+    "Content-Type": "application/json",
+    "Idempotency-Key": "n8n-idempotency-002",
+  };
+
+  await fetch(`${baseUrl}/api/leads`, {
+    method: "POST",
+    headers,
+    body: JSON.stringify({ Last_Name: "Primeiro", Company: "HDev" }),
+  });
+
+  const response = await fetch(`${baseUrl}/api/leads`, {
+    method: "POST",
+    headers,
+    body: JSON.stringify({ Last_Name: "Segundo", Company: "HDev" }),
+  });
+  const body = await response.json();
+
+  assert.equal(response.status, 409);
+  assert.deepEqual(body, {
+    success: false,
+    error: {
+      code: "IDEMPOTENCY_KEY_REUSED",
+      message: "O identificador de idempotência já foi usado com outro payload.",
+    },
+  });
+});
+
 test("PATCH /api/leads/:id exige confirmação", async () => {
   const leadId = "7603449000000705001";
 
@@ -298,8 +437,14 @@ test("PATCH /api/leads/:id exige confirmação", async () => {
   const blockedBody = await blockedResponse.json();
 
   assert.equal(blockedResponse.status, 400);
-  assert.equal(blockedBody.success, false);
-  assert.equal(blockedBody.error.code, "VALIDATION_ERROR");
+  assert.deepEqual(blockedBody, {
+    success: false,
+    error: {
+      code: "VALIDATION_ERROR",
+      message: "Atualização bloqueada. Informe X-Confirm-Update: true.",
+    },
+  });
+  assert.equal(crmCalls.updateLead.at(-1), undefined);
 
   const confirmedResponse = await fetch(`${baseUrl}/api/leads/${leadId}`, {
     method: "PATCH",

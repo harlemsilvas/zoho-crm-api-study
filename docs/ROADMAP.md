@@ -98,11 +98,27 @@ restaura a versão anterior sem perder o volume do n8n.
 
 Objetivo: melhorar o fluxo de Leads sem ampliar risco de criação duplicada.
 
-- Adicionar idempotência para impedir duplicidade em reenvios do n8n.
-- Padronizar códigos e mensagens de erro entre n8n, API e Zoho.
-- Avaliar paginação e filtros de listagem.
-- Criar fluxo explícito e protegido para atualização de Lead.
-- Adicionar testes de contrato do workflow para cada resposta pública.
+- [x] Adicionar idempotência para impedir duplicidade em reenvios do n8n. A
+  criação aceita `Idempotency-Key` e usa `X-Request-ID` como fallback; um replay
+  do mesmo payload devolve `200` com `X-Idempotent-Replay: true`, e uma chave
+  reutilizada com payload diferente devolve `409`. O cache é em memória por processo,
+  com retenção de 24 horas e limite de 1.000 entradas; reinícios ou múltiplas
+  réplicas exigem armazenamento compartilhado antes de escalar a API.
+- [x] Padronizar códigos e mensagens de erro entre n8n, API e Zoho.
+  Validações locais continuam em `400 VALIDATION_ERROR`; falhas da Zoho são
+  expostas como `502` com `ZOHO_AUTH_ERROR`, `ZOHO_RATE_LIMITED` ou
+  `ZOHO_API_ERROR`, sem repassar mensagens ou detalhes externos.
+- [x] Avaliar paginação e filtros de listagem. `GET /api/leads` aceita
+  `page` (1–200), `per_page` (1–200) e filtro exato `company`; o filtro é
+  convertido para `criteria` na API V8 da Zoho e valores inválidos são
+  rejeitados com `400 VALIDATION_ERROR`.
+- [x] Criar fluxo explícito e protegido para atualização de Lead. A rota
+  `PATCH /api/leads/:id` exige `X-Confirm-Update: true` antes de validar ou
+  chamar a Zoho; sem o cabeçalho retorna `400 VALIDATION_ERROR`. O cliente
+  continua exigindo a confirmação explícita como segunda barreira.
+- [x] Adicionar testes de contrato do workflow para cada resposta pública. Os
+  testes cobrem validação `400`, sucesso com status da API, erro da API,
+  propagação de `X-Request-ID`, resposta JSON completa e conexões dos caminhos.
 
 Aceite: reenvio da mesma execução não cria duplicidade e os contratos existentes
 continuam aprovados.

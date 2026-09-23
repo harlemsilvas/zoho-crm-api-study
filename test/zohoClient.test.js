@@ -32,7 +32,7 @@ test("renova o token e lista Leads com o cabeçalho da Zoho", async () => {
   };
   const client = new ZohoCrmClient({ ...config }, fetchMock);
 
-  await client.listLeads({ perPage: 5 });
+  await client.listLeads({ perPage: 5, page: 2, company: "HDev Soluções" });
 
   assert.equal(calls.length, 2);
   assert.equal(calls[0].url, "https://accounts.zoho.com/oauth/v2/token");
@@ -41,6 +41,10 @@ test("renova o token e lista Leads com o cabeçalho da Zoho", async () => {
     calls[1].options.headers.get("Authorization"),
     "Zoho-oauthtoken new-access-token",
   );
+  const query = new URL(calls[1].url).searchParams;
+  assert.equal(query.get("page"), "2");
+  assert.equal(query.get("per_page"), "5");
+  assert.equal(query.get("criteria"), "(Company:equals:HDev Soluções)");
 });
 
 test("cria Lead usando o API name configurado", async () => {
