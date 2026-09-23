@@ -6,10 +6,11 @@ A integração local foi validada com 53 testes e uma criação controlada via
 ## Decisões
 
 - Domínio: `zoho.hdevsolucoes.tech`.
-- API privada: `127.0.0.1:3000`.
+- API privada no host: `127.0.0.1:3030`; ela continua escutando `3000` dentro
+  do container.
 - n8n interno: container `5678`, host `127.0.0.1:5679` para evitar conflito.
 - Proxy HTTPS externo: portas `80/443` para `127.0.0.1:5679`.
-- Não publicar `3000`, `5678` ou `5679` no firewall.
+- Não publicar `3030`, `5678` ou `5679` no firewall.
 - Não copiar, exibir ou commitar `.env` e `.env.n8n`.
 
 Mapeamento planejado na VPS:
@@ -17,7 +18,7 @@ Mapeamento planejado na VPS:
 ```yaml
 zoho-api:
   ports:
-    - "127.0.0.1:3000:3000"
+    - "127.0.0.1:3030:3000"
 n8n:
   ports:
     - "127.0.0.1:5679:5678"
@@ -30,16 +31,16 @@ n8n:
 2. Criar usuário operacional e conceder Docker:
 
 ```bash
-sudo adduser deploy
-sudo usermod -aG sudo deploy
-sudo usermod -aG docker deploy
+sudo adduser zoho-deploy
+sudo usermod -aG sudo zoho-deploy
+sudo usermod -aG docker zoho-deploy
 ```
 
-Instalar a chave SSH em `/home/deploy/.ssh/authorized_keys` (`700` no diretório,
+Instalar a chave SSH em `/home/zoho-deploy/.ssh/authorized_keys` (`700` no diretório,
 `600` no arquivo) e validar um novo login. O grupo `docker` equivale a acesso
 administrativo; conceder somente ao operador autorizado.
 
-3. Como `deploy`, instalar/validar Docker, clonar o repositório e selecionar a
+3. Como `zoho-deploy`, instalar/validar Docker, clonar o repositório e selecionar a
    branch:
 
 ```bash
@@ -66,7 +67,7 @@ Não executar comandos que exibam os valores.
 ```bash
 docker compose --env-file .env.n8n -f compose.n8n.yaml up -d --build
 docker compose --env-file .env.n8n -f compose.n8n.yaml ps
-curl -fsS http://127.0.0.1:3000/health
+curl -fsS http://127.0.0.1:3030/health
 curl -fsS http://127.0.0.1:5679/healthz
 ```
 
@@ -105,7 +106,7 @@ docker logs --since 10m zoho-study-n8n
 ## Critérios de aceite
 
 - DNS e HTTPS funcionam para o domínio.
-- n8n é acessível somente pelo proxy; API permanece em loopback.
+- n8n é acessível somente pelo proxy; API permanece em `127.0.0.1:3030` no host.
 - Volume persiste após reinício.
 - Workflow propaga `X-Request-ID`.
 - Uma execução controlada retorna `201` e correlaciona os logs.
