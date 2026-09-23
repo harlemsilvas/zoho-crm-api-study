@@ -53,6 +53,25 @@ curl -fsS http://127.0.0.1:5679/healthz
 docker logs --since 10m zoho-study-api
 ```
 
+Verifique a política de rotação aplicada aos containers:
+
+```bash
+docker inspect --format '{{.Name}} {{.HostConfig.LogConfig.Type}} {{json .HostConfig.LogConfig.Config}}' \
+  zoho-study-api zoho-study-n8n
+```
+
+O resultado esperado inclui `json-file`, `max-size: 10m` e `max-file: 5`.
+
+Checagem rápida dos serviços e do domínio:
+
+```bash
+set -eu
+curl -fsS http://127.0.0.1:3030/health >/dev/null
+curl -fsS http://127.0.0.1:5679/healthz >/dev/null
+curl -fsSI https://zoho.hdevsolucoes.tech/healthz >/dev/null
+echo "health checks: ok"
+```
+
 Não execute `docker compose down -v`. O volume `zoho-study-n8n-data` contém o
 estado do n8n e precisa de backup antes de mudanças relevantes.
 

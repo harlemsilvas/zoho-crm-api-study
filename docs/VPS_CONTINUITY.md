@@ -143,6 +143,16 @@ docker run --rm -v zoho-study-n8n-data:/source:ro \
 docker compose --env-file .env.n8n -f compose.n8n.yaml up -d n8n
 ```
 
+Verificação da rotação e saúde:
+
+```bash
+docker inspect --format '{{.Name}} {{.HostConfig.LogConfig.Type}} {{json .HostConfig.LogConfig.Config}}' \
+  zoho-study-api zoho-study-n8n
+curl -fsS http://127.0.0.1:3030/health >/dev/null
+curl -fsS http://127.0.0.1:5679/healthz >/dev/null
+curl -fsSI https://zoho.hdevsolucoes.tech/healthz >/dev/null
+```
+
 ## Critérios de aceite
 
 - DNS e HTTPS funcionam para o domínio.

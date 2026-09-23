@@ -7,6 +7,12 @@ services:
     container_name: zoho-study-api
     restart: unless-stopped
 
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "5"
+
     env_file:
       - .env
 
@@ -37,6 +43,12 @@ services:
     image: docker.n8n.io/n8nio/n8n:2.38.6
     container_name: zoho-study-n8n
     restart: unless-stopped
+
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "5"
 
     ports:
       - "127.0.0.1:5678:5678"
