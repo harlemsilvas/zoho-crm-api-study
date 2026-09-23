@@ -13,6 +13,15 @@ const crmCalls = {
 };
 
 const crmClient = {
+  config: {
+    clientId: "client-id",
+    clientSecret: "client-secret",
+    refreshToken: "refresh-token",
+    accountsUrl: "https://accounts.example.test",
+    apiDomain: "https://api.example.test",
+    customSourceField: "Source",
+  },
+
   async listLeads(options) {
     crmCalls.listLeads.push(options);
 
@@ -129,6 +138,45 @@ test("GET /health retorna o estado da API", async () => {
   assert.deepEqual(body, {
     status: "ok",
     service: "zoho-crm-api-study",
+  });
+});
+
+
+test("GET /readiness confirma a configuração sem chamar o cliente Zoho", async () => {
+  const response = await fetch(`${baseUrl}/readiness`);
+  const body = await response.json();
+
+  assert.equal(response.status, 200);
+  assert.deepEqual(body, {
+    status: "ready",
+    service: "zoho-crm-api-study",
+    checks: {
+      zoho_configuration: "ok",
+    },
+  });
+});
+
+test("GET /readiness retorna 503 quando o cliente não está configurado", async (t) => {
+  const readinessServer = createApp().listen(0, "127.0.0.1");
+  t.after(() => new Promise((resolve, reject) => {
+    readinessServer.close((error) => error ? reject(error) : resolve());
+  }));
+  await new Promise((resolve, reject) => {
+    readinessServer.once("listening", resolve);
+    readinessServer.once("error", reject);
+  });
+
+  const address = readinessServer.address();
+  const response = await fetch(`http://127.0.0.1:${address.port}/readiness`);
+  const body = await response.json();
+
+  assert.equal(response.status, 503);
+  assert.deepEqual(body, {
+    status: "not_ready",
+    service: "zoho-crm-api-study",
+    checks: {
+      zoho_configuration: "not_configured",
+    },
   });
 });
 

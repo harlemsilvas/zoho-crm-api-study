@@ -171,6 +171,7 @@ controlada de Lead fictício pelo domínio público, com resposta `201`. O mesmo
 cd ~/zoho-crm-api-study
 docker compose --env-file .env.n8n -f compose.n8n.yaml ps
 curl -fsS http://127.0.0.1:3030/health
+curl -fsS http://127.0.0.1:3030/readiness
 curl -fsS http://127.0.0.1:5679/healthz
 docker logs --since 10m zoho-study-api
 ```
@@ -189,6 +190,7 @@ Checagem rápida dos serviços e do domínio:
 ```bash
 set -eu
 curl -fsS http://127.0.0.1:3030/health >/dev/null
+curl -fsS http://127.0.0.1:3030/readiness >/dev/null
 curl -fsS http://127.0.0.1:5679/healthz >/dev/null
 curl -fsSI https://zoho.hdevsolucoes.tech/healthz >/dev/null
 echo "health checks: ok"

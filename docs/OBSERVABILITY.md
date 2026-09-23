@@ -12,6 +12,21 @@ acessa o Zoho nem depende dos arquivos de credenciais.
 - Eventos de inicialização e encerramento do servidor também usam JSON.
 - Implantação na VPS e mudanças no workflow ativo do n8n não fazem parte desta entrega.
 
+## Readiness
+
+`GET /health` confirma apenas que o processo HTTP está respondendo. `GET
+/readiness` retorna `200` quando o cliente Zoho recebeu toda a configuração
+normalizada necessária no processo; sem essa configuração, retorna `503` com
+`status: "not_ready"`. O endpoint não renova OAuth, não chama a Zoho e não
+expõe valores de configuração.
+
+Validação local:
+
+```bash
+curl -i http://127.0.0.1:3000/health
+curl -i http://127.0.0.1:3000/readiness
+```
+
 ## Formato e eventos
 
 Cada evento ocupa uma linha JSON em stdout, terminada por uma quebra de linha:
@@ -55,7 +70,7 @@ Os pontos de instrumentação selecionam apenas metadados operacionais. Não pas
 headers, bodies, URLs externas, payloads, mensagens de erro, stacks ou dados
 pessoais para o logger. IDs de registros também não são registrados.
 
-As rotas HTTP são normalizadas como `/health`, `/api/leads` e `/api/leads/:id`.
+As rotas HTTP são normalizadas como `/health`, `/readiness`, `/api/leads` e `/api/leads/:id`.
 Caminhos desconhecidos aparecem como `[unmatched]`. Query strings e valores dos
 parâmetros de rota nunca entram no log.
 

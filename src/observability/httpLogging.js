@@ -4,6 +4,7 @@ import { performance } from "node:perf_hooks";
 // Only known route templates are logged, never user-supplied path segments.
 function safePath(path) {
   if (/^\/health\/?$/i.test(path)) return "/health";
+  if (/^\/readiness\/?$/i.test(path)) return "/readiness";
   if (/^\/api\/leads\/?$/i.test(path)) return "/api/leads";
   if (/^\/api\/leads\/[^/]+\/?$/i.test(path)) return "/api/leads/:id";
   return "[unmatched]";

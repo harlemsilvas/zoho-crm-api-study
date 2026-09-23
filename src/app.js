@@ -4,6 +4,22 @@ import { requestContextMiddleware } from "./observability/requestContext.js";
 import { logger as defaultLogger, safeErrorName } from "./observability/logger.js";
 import { createHttpLoggingMiddleware } from "./observability/httpLogging.js";
 
+const requiredClientConfig = [
+  "clientId",
+  "clientSecret",
+  "refreshToken",
+  "accountsUrl",
+  "apiDomain",
+  "customSourceField",
+];
+
+function hasClientConfiguration(crmClient) {
+  return requiredClientConfig.every((key) => {
+    const value = crmClient?.config?.[key];
+    return typeof value === "string" && value.trim().length > 0;
+  });
+}
+
 export function createApp({ crmClient, logger = defaultLogger } = {}) {
   const app = express();
 
@@ -22,6 +38,18 @@ export function createApp({ crmClient, logger = defaultLogger } = {}) {
     response.status(200).json({
       status: "ok",
       service: "zoho-crm-api-study",
+    });
+  });
+
+  app.get("/readiness", (request, response) => {
+    const ready = hasClientConfiguration(crmClient);
+
+    response.status(ready ? 200 : 503).json({
+      status: ready ? "ready" : "not_ready",
+      service: "zoho-crm-api-study",
+      checks: {
+        zoho_configuration: ready ? "ok" : "not_configured",
+      },
     });
   });
 

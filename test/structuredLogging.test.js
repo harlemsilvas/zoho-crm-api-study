@@ -65,6 +65,7 @@ test("HTTP registra status, duração e ID em sucesso, validação, JSON inváli
   });
   const cases = [
     ["/health?token=PRIVATE_QUERY", {}, 200, "/health"],
+    ["/readiness", {}, 503, "/readiness"],
     ["/api/leads/PRIVATE_PATH", {}, 200, "/api/leads/:id"],
     ["/api/leads?per_page=PRIVATE_QUERY", {}, 400, "/api/leads"],
     ["/PRIVATE_UNKNOWN_PATH", {}, 404, "[unmatched]"],
