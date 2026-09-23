@@ -138,12 +138,30 @@ Não aplicar `apt upgrade`, alterar grupos, permissões ou configuração SSH ju
 com um deploy da aplicação. Fazer backup e manter uma segunda sessão SSH antes
 de qualquer mudança administrativa.
 
+## Override Compose da VPS
+
+O arquivo [`compose.vps.yaml`](../compose.vps.yaml) versiona somente os
+mapeamentos de host da produção:
+
+- API: `127.0.0.1:3030:3000`;
+- n8n: `127.0.0.1:5679:5678`.
+
+Ele não contém credenciais, altera portas internas nem substitui o volume
+persistente. Na VPS, use os dois arquivos em conjunto:
+
+```bash
+docker compose --env-file .env.n8n \
+  -f compose.n8n.yaml -f compose.vps.yaml ps
+docker compose --env-file .env.n8n \
+  -f compose.n8n.yaml -f compose.vps.yaml up -d --build
+```
+
 ## Publicação repetível
 
 A rotina [`ops/publish-vps.sh`](../ops/publish-vps.sh) executa os testes locais,
 publica somente quando recebe `--push` e atualiza a VPS somente quando recebe
 `--deploy`. Ela exige a branch `feat/structured-logs`, executa `git diff --check`,
-recusa alterações rastreadas locais e interrompe o processo se a VPS estiver
+usa o override Compose da VPS, recusa alterações rastreadas locais e interrompe o processo se a VPS estiver
 com mudanças não commitadas. Nunca executa `docker compose down -v` e não exibe
 valores de `.env` ou `.env.n8n`.
 
@@ -199,7 +217,7 @@ controlada de Lead fictício pelo domínio público, com resposta `201`. O mesmo
 
 ```bash
 cd ~/zoho-crm-api-study
-docker compose --env-file .env.n8n -f compose.n8n.yaml ps
+docker compose --env-file .env.n8n -f compose.n8n.yaml -f compose.vps.yaml ps
 curl -fsS http://127.0.0.1:3030/health
 curl -fsS http://127.0.0.1:3030/readiness
 curl -fsS http://127.0.0.1:5679/healthz

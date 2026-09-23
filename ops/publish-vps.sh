@@ -81,12 +81,12 @@ fi
 git fetch origin "$branch"
 git merge --ff-only "origin/$branch"
 npm test
-docker compose --env-file .env.n8n -f compose.n8n.yaml up -d --build
+docker compose --env-file .env.n8n -f compose.n8n.yaml -f compose.vps.yaml up -d --build
 curl -fsS http://127.0.0.1:3030/health >/dev/null
 curl -fsS http://127.0.0.1:3030/readiness >/dev/null
 curl -fsS http://127.0.0.1:5679/healthz >/dev/null
 curl -fsSI https://zoho.hdevsolucoes.tech/healthz >/dev/null
-docker compose --env-file .env.n8n -f compose.n8n.yaml ps
+docker compose --env-file .env.n8n -f compose.n8n.yaml -f compose.vps.yaml ps
 git rev-parse HEAD
 REMOTE
 fi

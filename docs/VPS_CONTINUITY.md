@@ -78,11 +78,11 @@ test -s .env.n8n
 
 Não executar comandos que exibam os valores.
 
-5. Alterar somente o mapeamento do n8n para `127.0.0.1:5679:5678` e subir:
+5. Aplicar o override versionado da VPS (`3030` e `5679`) e subir:
 
 ```bash
-docker compose --env-file .env.n8n -f compose.n8n.yaml up -d --build
-docker compose --env-file .env.n8n -f compose.n8n.yaml ps
+docker compose --env-file .env.n8n -f compose.n8n.yaml -f compose.vps.yaml up -d --build
+docker compose --env-file .env.n8n -f compose.n8n.yaml -f compose.vps.yaml ps
 curl -fsS http://127.0.0.1:3030/health
 curl -fsS http://127.0.0.1:5679/healthz
 ```
@@ -134,13 +134,13 @@ docker logs --since 10m zoho-study-n8n
 Backup do volume em janela de manutenção:
 
 ```bash
-docker compose --env-file .env.n8n -f compose.n8n.yaml stop n8n
+docker compose --env-file .env.n8n -f compose.n8n.yaml -f compose.vps.yaml stop n8n
 mkdir -p ~/backups/zoho
 BACKUP_NAME="n8n-data-$(date +%Y%m%d-%H%M%S).tar.gz"
 docker run --rm -v zoho-study-n8n-data:/source:ro \
   -v "$HOME/backups/zoho:/backup" alpine:3.20 \
   tar czf "/backup/$BACKUP_NAME" -C /source .
-docker compose --env-file .env.n8n -f compose.n8n.yaml up -d n8n
+docker compose --env-file .env.n8n -f compose.n8n.yaml -f compose.vps.yaml up -d n8n
 ```
 
 Verificação da rotação e saúde:

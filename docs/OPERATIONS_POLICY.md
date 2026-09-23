@@ -81,7 +81,7 @@ Antes de atualizar, registrar o estado atual sem imprimir segredos:
 ```bash
 cd ~/zoho-crm-api-study
 git rev-parse HEAD
-docker compose --env-file .env.n8n -f compose.n8n.yaml ps
+docker compose --env-file .env.n8n -f compose.n8n.yaml -f compose.vps.yaml ps
 docker image ls --format '{{.Repository}}:{{.Tag}} {{.ID}} {{.CreatedAt}}'
 ```
 
@@ -100,7 +100,7 @@ de ambiente permanece somente no host.
 git fetch origin
 git status --short
 git switch --detach SHA_SAUDAVEL
-docker compose --env-file .env.n8n -f compose.n8n.yaml up -d --build
+docker compose --env-file .env.n8n -f compose.n8n.yaml -f compose.vps.yaml up -d --build
 ```
 
 6. Validar API, n8n, HTTPS, workflow e `X-Request-ID`.
