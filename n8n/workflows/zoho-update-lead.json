@@ -1,0 +1,308 @@
+{
+  "name": "Zoho CRM — Atualizar Lead via Webhook",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "zoho/leads/update",
+        "authentication": "headerAuth",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        240,
+        -144
+      ],
+      "id": "b8a4f7b8-36d1-4a52-8f1e-0a2f4f6e1d01",
+      "name": "Webhook",
+      "webhookId": "cb0e86f0-93c6-4d8a-9709-4c8a7a0f89a1",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "aQvHCQdVOtssMZW1",
+          "name": "Zoho Study — Webhook Auth"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const input = $json.body ?? {};\nconst errors = [];\nconst leadId = typeof input.id === \"string\" ? input.id.trim() : String(input.id ?? \"\").trim();\nconst allowedFields = new Set([\"First_Name\", \"Last_Name\", \"Company\", \"Email\", \"Description\", \"Lista_de_op_es\"]);\nconst payload = {};\n\nif (!/^\\d{10,30}$/.test(leadId)) {\n  errors.push(\"id deve conter somente números.\");\n}\n\nfor (const [field, value] of Object.entries(input)) {\n  if (field === \"id\") continue;\n  if (!allowedFields.has(field)) {\n    errors.push(`Campo não permitido: ${field}.`);\n    continue;\n  }\n  if (typeof value !== \"string\" || !value.trim()) {\n    errors.push(`${field} deve ser informado como texto não vazio.`);\n    continue;\n  }\n  payload[field] = value.trim();\n}\n\nif (Object.keys(payload).length === 0) {\n  errors.push(\"Informe pelo menos um campo para atualizar.\");\n}\n\nif (payload.Email && !/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(payload.Email)) {\n  errors.push(\"Email possui formato inválido.\");\n}\n\nreturn { valid: errors.length === 0, errors, leadId, payload };"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        464,
+        -128
+      ],
+      "id": "4d6b9ef2-29cb-4e75-b2dd-b0c3b50eab10",
+      "name": "Validar e normalizar atualização"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "b65a4825-9586-4d4e-a9b4-564a79e6072d",
+              "leftValue": "={{ $json.valid }}",
+              "rightValue": "={{ $json.valid }}",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        640,
+        -128
+      ],
+      "id": "f2c9870f-69dd-4c2f-aac6-1848f2504a7e",
+      "name": "Atualização válida?"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { success: false, error: { code: \"VALIDATION_ERROR\", message: \"Os dados da atualização são inválidos.\", details: $json.errors } } }}",
+        "options": {
+          "responseCode": 400,
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "X-Request-ID",
+                "value": "={{ $execution.id }}"
+              }
+            ]
+          }
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        784,
+        64
+      ],
+      "id": "c6f72766-8b3c-4b52-8b3c-ef0ae9a3db6d",
+      "name": "Responder validação inválida"
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "={{ 'http://zoho-api:3000/api/leads/' + $json.leadId }}",
+        "sendBody": true,
+        "sendHeaders": true,
+        "specifyHeaders": "json",
+        "jsonHeaders": "={{ JSON.stringify({ 'X-Request-ID': $execution.id, 'X-Confirm-Update': 'true' }) }}",
+        "specifyBody": "json",
+        "jsonBody": "={{ $json.payload }}",
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true,
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        928,
+        -128
+      ],
+      "id": "9f7c77ea-ffbd-44bf-9f0a-58e9d54f7f0c",
+      "name": "Atualizar Lead na API"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "be872389-1e83-4cd3-8dd9-36fb025baf78",
+              "leftValue": "={{ $json.statusCode }}",
+              "rightValue": 200,
+              "operator": {
+                "type": "number",
+                "operation": "gte"
+              }
+            },
+            {
+              "id": "0e81f02c-8de2-4a15-be18-69b9a2dff62f",
+              "leftValue": "={{ $json.statusCode }}",
+              "rightValue": 300,
+              "operator": {
+                "type": "number",
+                "operation": "lt"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1104,
+        -112
+      ],
+      "id": "3c7dc3cb-3427-46d5-9e59-76d4fd0f95ed",
+      "name": "API respondeu com sucesso?"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json.body }}",
+        "options": {
+          "responseCode": "={{ $json.statusCode }}",
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "X-Request-ID",
+                "value": "={{ $json.headers?.['x-request-id'] ?? $execution.id }}"
+              }
+            ]
+          }
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        1328,
+        -144
+      ],
+      "id": "ed26630c-19dc-4441-a19f-2b5a1e5edac2",
+      "name": "Responder atualização bem-sucedida"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json.body || { success: false, error: { code: \"ZOHO_API_ERROR\", message: \"Não foi possível atualizar o Lead.\" } } }}",
+        "options": {
+          "responseCode": "={{ $json.statusCode }}",
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "X-Request-ID",
+                "value": "={{ $json.headers?.['x-request-id'] ?? $execution.id }}"
+              }
+            ]
+          }
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        1312,
+        96
+      ],
+      "id": "a8f2fbe1-8b10-41b9-ae3d-5e3f3eb26410",
+      "name": "Responder erro da atualização"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Validar e normalizar atualização",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validar e normalizar atualização": {
+      "main": [
+        [
+          {
+            "node": "Atualização válida?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Atualização válida?": {
+      "main": [
+        [
+          {
+            "node": "Atualizar Lead na API",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Responder validação inválida",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Atualizar Lead na API": {
+      "main": [
+        [
+          {
+            "node": "API respondeu com sucesso?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "API respondeu com sucesso?": {
+      "main": [
+        [
+          {
+            "node": "Responder atualização bem-sucedida",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Responder erro da atualização",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "4d4c4f8b-54fd-4bea-9c5f-8c3b0a6e05c1",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "27b0ab19ff2d6fb9790f04284a724a4205b6caa863bfff649190f5deb8165b39"
+  },
+  "nodeGroups": [],
+  "id": "ZohoUpdateLeadStudy",
+  "tags": []
+}

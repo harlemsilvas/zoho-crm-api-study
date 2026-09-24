@@ -5,6 +5,9 @@ import test from "node:test";
 const workflow = JSON.parse(
   fs.readFileSync(new URL("../n8n/workflows/zoho-create-lead.json", import.meta.url), "utf8"),
 );
+const updateWorkflow = JSON.parse(
+  fs.readFileSync(new URL("../n8n/workflows/zoho-update-lead.json", import.meta.url), "utf8"),
+);
 
 function nodeNamed(name) {
   const node = workflow.nodes.find((candidate) => candidate.name === name);
@@ -62,4 +65,49 @@ test("workflow mantém o contrato do nó HTTP e os caminhos públicos", () => {
   assert.deepEqual(connections["Lead válido?"]?.main?.[1]?.[0]?.node, "Responder validação inválida");
   assert.deepEqual(connections["API respondeu com sucesso?"]?.main?.[0]?.[0]?.node, "Responder sucesso");
   assert.deepEqual(connections["API respondeu com sucesso?"]?.main?.[1]?.[0]?.node, "Responder erro da API");
+});
+
+
+function updateNodeNamed(name) {
+  const node = updateWorkflow.nodes.find((candidate) => candidate.name === name);
+  assert.ok(node, `Nó de atualização ausente: ${name}`);
+  return node;
+}
+
+test("workflow de atualização exige ID, confirmação e propaga a correlação", () => {
+  const webhook = updateNodeNamed("Webhook");
+  assert.equal(webhook.parameters.httpMethod, "POST");
+  assert.equal(webhook.parameters.path, "zoho/leads/update");
+  assert.equal(webhook.parameters.authentication, "headerAuth");
+
+  const validator = updateNodeNamed("Validar e normalizar atualização");
+  assert.match(validator.parameters.jsCode, /leadId/);
+  assert.match(validator.parameters.jsCode, /Informe pelo menos um campo/);
+
+  const request = updateNodeNamed("Atualizar Lead na API");
+  assert.equal(request.parameters.method, "PATCH");
+  assert.match(request.parameters.url, /zoho-api:3000\/api\/leads/);
+  assert.match(request.parameters.jsonHeaders, /X-Confirm-Update/);
+  assert.match(request.parameters.jsonHeaders, /X-Request-ID/);
+  assert.equal(request.parameters.options.response.response.fullResponse, true);
+  assert.equal(request.parameters.options.response.response.neverError, true);
+});
+
+test("workflow de atualização cobre respostas públicas e caminhos", () => {
+  const invalid = updateNodeNamed("Responder validação inválida");
+  assert.equal(invalid.parameters.options.responseCode, 400);
+  assert.match(invalid.parameters.responseBody, /VALIDATION_ERROR/);
+
+  const success = updateNodeNamed("Responder atualização bem-sucedida");
+  assert.match(String(success.parameters.options.responseCode), /\$json\.statusCode/);
+  assert.equal(success.parameters.responseBody, "={{ $json.body }}");
+
+  const failure = updateNodeNamed("Responder erro da atualização");
+  assert.match(String(failure.parameters.options.responseCode), /\$json\.statusCode/);
+  assert.match(failure.parameters.responseBody, /ZOHO_API_ERROR/);
+
+  assert.equal(updateWorkflow.connections["Atualização válida?"]?.main?.[0]?.[0]?.node, "Atualizar Lead na API");
+  assert.equal(updateWorkflow.connections["Atualização válida?"]?.main?.[1]?.[0]?.node, "Responder validação inválida");
+  assert.equal(updateWorkflow.connections["API respondeu com sucesso?"]?.main?.[0]?.[0]?.node, "Responder atualização bem-sucedida");
+  assert.equal(updateWorkflow.connections["API respondeu com sucesso?"]?.main?.[1]?.[0]?.node, "Responder erro da atualização");
 });

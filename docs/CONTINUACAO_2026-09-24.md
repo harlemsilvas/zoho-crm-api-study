@@ -33,11 +33,13 @@ Preservar os arquivos locais não rastreados e não adicionar `.env`, `.env.n8n`
 
 ## Próximas opções
 
-1. Avaliar uma store compartilhada para idempotência caso a API passe a ter mais
-   de uma réplica. A implementação atual é em memória por processo, com TTL de
-   24 horas e limite de 1.000 entradas.
-2. Criar, se necessário, um workflow n8n separado para atualização de Lead. A
-   API já exige `X-Confirm-Update: true` antes de validar ou chamar a Zoho.
+1. A avaliação da store compartilhada está registrada em [Idempotência](IDEMPOTENCY.md).
+   A decisão é manter o cache em memória enquanto houver uma réplica e migrar
+   para Valkey/Redis antes de escalar horizontalmente.
+2. O workflow n8n separado de atualização já foi criado em
+   `n8n/workflows/zoho-update-lead.json`. Ele usa o caminho
+   `/webhook/zoho/leads/update`, valida o ID e envia
+   `X-Confirm-Update: true` somente à API interna.
 3. Continuar o ciclo operacional: backup do volume, health check, testes,
    `git diff --check`, commit seletivo e deploy pela rotina versionada.
 

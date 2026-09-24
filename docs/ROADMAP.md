@@ -118,7 +118,9 @@ Objetivo: melhorar o fluxo de Leads sem ampliar risco de criação duplicada.
 - [x] Criar fluxo explícito e protegido para atualização de Lead. A rota
   `PATCH /api/leads/:id` exige `X-Confirm-Update: true` antes de validar ou
   chamar a Zoho; sem o cabeçalho retorna `400 VALIDATION_ERROR`. O cliente
-  continua exigindo a confirmação explícita como segunda barreira.
+  continua exigindo a confirmação explícita como segunda barreira. O workflow
+  separado `n8n/workflows/zoho-update-lead.json` valida o ID e os campos, usa
+  `POST /webhook/zoho/leads/update` e envia a confirmação somente à API interna.
 - [x] Adicionar testes de contrato do workflow para cada resposta pública. Os
   testes cobrem validação `400`, sucesso com status da API, erro da API,
   propagação de `X-Request-ID`, resposta JSON completa e conexões dos caminhos.
@@ -131,8 +133,10 @@ continuam aprovados.
 As Prioridades 0 a 4 foram concluídas e validadas. Próximas evoluções devem
 ser escolhidas conforme o risco e começar por uma mudança pequena:
 
-1. Avaliar armazenamento compartilhado para idempotência antes de usar múltiplas
-   réplicas da API.
+1. [x] Avaliar armazenamento compartilhado para idempotência. A decisão atual
+   é manter o cache em memória enquanto houver uma réplica; migrar para
+   Valkey/Redis somente antes de escalar horizontalmente. Consulte
+   [Idempotência](IDEMPOTENCY.md).
 2. Avaliar um workflow n8n separado para atualização de Lead, mantendo a dupla
    confirmação da API.
 3. Manter o ciclo de backup, health check, testes e deploy reproduzível.

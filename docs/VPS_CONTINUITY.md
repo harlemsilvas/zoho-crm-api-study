@@ -101,8 +101,10 @@ curl -I https://zoho.hdevsolucoes.tech/healthz
 
 Abrir no firewall somente `22`, `80` e `443`.
 
-7. Importar `n8n/workflows/zoho-create-lead.json`, selecionar a credencial
-   Header Auth `X-Webhook-Key` e ativar. Testar primeiro sem criar Lead:
+7. Importar `n8n/workflows/zoho-create-lead.json` e
+   `n8n/workflows/zoho-update-lead.json`, selecionar a credencial Header Auth
+   `X-Webhook-Key` em ambos e ativar somente as versões necessárias. Testar
+   primeiro sem criar ou alterar Lead:
 
 ```bash
 curl -i https://zoho.hdevsolucoes.tech/healthz
